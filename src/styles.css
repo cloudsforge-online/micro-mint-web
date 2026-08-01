@@ -169,7 +169,7 @@ body {
 }
 
 .wt-facts--mono dd {
-  font-family: var(--cf-font-mono, ui-monospace, monospace);
+  font-family: var(--cf-font-mono);
   font-size: 0.82rem;
 }
 
@@ -242,7 +242,7 @@ body {
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
   background: var(--cf-bg-sunken);
-  font-family: var(--cf-font-mono, ui-monospace, monospace);
+  font-family: var(--cf-font-mono);
 }
 
 .wt-spinner {
@@ -283,7 +283,7 @@ body {
   left: -9999px;
   top: 0;
   z-index: 100;
-  padding: var(--cf-space-2) var(--cf-space-3);
+  padding: var(--cf-space-sm) var(--cf-space-lg);
   background: var(--cf-accent);
   color: var(--cf-ash-900);
   font-weight: 600;
@@ -297,11 +297,11 @@ body {
 /* ------------------------------ heads ------------------------------ */
 
 .mw-head {
-  margin: 0 0 var(--cf-space-5);
+  margin: 0 0 var(--cf-space-2xl);
 }
 
 .mw-head__eyebrow {
-  margin: 0 0 var(--cf-space-2);
+  margin: 0 0 var(--cf-space-sm);
   font-size: var(--cf-text-sm);
   color: var(--cf-fg-dim);
 }
@@ -318,7 +318,7 @@ body {
 }
 
 .mw-head__lede {
-  margin: var(--cf-space-3) 0 0;
+  margin: var(--cf-space-lg) 0 0;
   max-width: 62ch;
   color: var(--cf-fg-dim);
 }
@@ -326,9 +326,9 @@ body {
 .mw-head__state {
   display: flex;
   align-items: center;
-  gap: var(--cf-space-3);
+  gap: var(--cf-space-lg);
   flex-wrap: wrap;
-  margin: var(--cf-space-3) 0 0;
+  margin: var(--cf-space-lg) 0 0;
 }
 
 .mw-head__meaning {
@@ -339,25 +339,25 @@ body {
 /* ----------------------------- panels ------------------------------ */
 
 .mw-panel {
-  margin: 0 0 var(--cf-space-5);
-  padding: var(--cf-space-4);
+  margin: 0 0 var(--cf-space-2xl);
+  padding: var(--cf-space-xl);
   background: var(--cf-surface);
-  border: 1px solid var(--cf-border);
-  border-radius: var(--cf-radius-md);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius);
 }
 
 .mw-panel__title {
-  margin: 0 0 var(--cf-space-3);
+  margin: 0 0 var(--cf-space-lg);
   font-size: var(--cf-text-lg);
 }
 
 .mw-panel__subtitle {
-  margin: var(--cf-space-4) 0 var(--cf-space-2);
+  margin: var(--cf-space-xl) 0 var(--cf-space-sm);
   font-size: var(--cf-text-md);
 }
 
 .mw-panel__note {
-  margin: var(--cf-space-2) 0 0;
+  margin: var(--cf-space-sm) 0 0;
   max-width: 72ch;
   color: var(--cf-fg-dim);
   font-size: var(--cf-text-sm);
@@ -368,10 +368,10 @@ body {
 .mw-note {
   display: flex;
   align-items: flex-start;
-  gap: var(--cf-space-2);
-  margin: 0 0 var(--cf-space-4);
-  padding: var(--cf-space-3);
-  border: 1px solid var(--cf-border);
+  gap: var(--cf-space-sm);
+  margin: 0 0 var(--cf-space-xl);
+  padding: var(--cf-space-lg);
+  border: 1px solid var(--cf-line);
   border-left-width: 3px;
   border-radius: var(--cf-radius-sm);
   background: var(--cf-surface);
@@ -385,11 +385,11 @@ body {
 
 /* The glyph carries the meaning; the border colour only reinforces it. */
 .mw-note--warn {
-  border-left-color: var(--cf-status-warn, var(--cf-accent));
+  border-left-color: var(--cf-warn);
 }
 
 .mw-note--crit {
-  border-left-color: var(--cf-status-crit, var(--cf-accent));
+  border-left-color: var(--cf-danger);
 }
 
 /* ------------------------------ price ------------------------------ */
@@ -398,7 +398,7 @@ body {
   margin: 0;
   display: flex;
   align-items: baseline;
-  gap: var(--cf-space-2);
+  gap: var(--cf-space-sm);
 }
 
 .mw-price__value {
@@ -414,16 +414,16 @@ body {
 
 .mw-tiers {
   list-style: none;
-  margin: var(--cf-space-3) 0 0;
+  margin: var(--cf-space-lg) 0 0;
   padding: 0;
   display: grid;
-  gap: var(--cf-space-3);
+  gap: var(--cf-space-lg);
   grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
 }
 
 .mw-tier {
-  padding: var(--cf-space-3);
-  border: 1px solid var(--cf-border);
+  padding: var(--cf-space-lg);
+  border: 1px solid var(--cf-line);
   border-radius: var(--cf-radius-sm);
 }
 
@@ -433,25 +433,25 @@ body {
 }
 
 .mw-tier__contract {
-  margin: var(--cf-space-1) 0 0;
+  margin: var(--cf-space-2xs) 0 0;
   color: var(--cf-fg-dim);
   font-size: var(--cf-text-sm);
 }
 
 .mw-tier__blurb {
-  margin: var(--cf-space-2) 0 0;
+  margin: var(--cf-space-sm) 0 0;
   font-size: var(--cf-text-sm);
 }
 
 .mw-tier__facts {
-  margin: var(--cf-space-3) 0 0;
+  margin: var(--cf-space-lg) 0 0;
   font-size: var(--cf-text-sm);
 }
 
 .mw-tier__facts div {
   display: flex;
-  gap: var(--cf-space-2);
-  margin: 0 0 var(--cf-space-1);
+  gap: var(--cf-space-sm);
+  margin: 0 0 var(--cf-space-2xs);
 }
 
 .mw-tier__facts dt {
@@ -465,7 +465,7 @@ body {
 }
 
 .mw-cta {
-  margin: var(--cf-space-5) 0;
+  margin: var(--cf-space-2xl) 0;
 }
 
 /* ------------------------------ facts ------------------------------ */
@@ -473,7 +473,7 @@ body {
 .mw-facts {
   margin: 0;
   display: grid;
-  gap: var(--cf-space-3);
+  gap: var(--cf-space-lg);
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
 }
 
@@ -484,12 +484,12 @@ body {
 }
 
 .mw-fact__value {
-  margin: var(--cf-space-1) 0 0;
+  margin: var(--cf-space-2xs) 0 0;
 }
 
 .mw-fact__sub {
   display: block;
-  margin-top: var(--cf-space-1);
+  margin-top: var(--cf-space-2xs);
   color: var(--cf-fg-dim);
   font-size: var(--cf-text-xs);
 }
@@ -505,7 +505,7 @@ body {
 
 .mw-absent--block {
   display: block;
-  margin: var(--cf-space-2) 0 0;
+  margin: var(--cf-space-sm) 0 0;
 }
 
 /* ----------------------------- badges ------------------------------ */
@@ -513,9 +513,9 @@ body {
 .mw-badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--cf-space-1);
-  padding: 0.1rem var(--cf-space-2);
-  border: 1px solid var(--cf-border);
+  gap: var(--cf-space-2xs);
+  padding: 0.1rem var(--cf-space-sm);
+  border: 1px solid var(--cf-line);
   border-radius: var(--cf-radius-sm);
   font-size: var(--cf-text-xs);
   letter-spacing: 0.04em;
@@ -527,15 +527,15 @@ body {
 }
 
 .mw-badge--good {
-  border-color: var(--cf-status-good, var(--cf-border));
+  border-color: var(--cf-success);
 }
 
 .mw-badge--warn {
-  border-color: var(--cf-status-warn, var(--cf-border));
+  border-color: var(--cf-warn);
 }
 
 .mw-badge--crit {
-  border-color: var(--cf-status-crit, var(--cf-border));
+  border-color: var(--cf-danger);
 }
 
 .mw-badge--busy {
@@ -550,19 +550,19 @@ body {
 
 .mw-risks {
   list-style: none;
-  margin: var(--cf-space-3) 0 0;
+  margin: var(--cf-space-lg) 0 0;
   padding: 0;
   display: grid;
-  gap: var(--cf-space-2);
+  gap: var(--cf-space-sm);
 }
 
 .mw-risk {
   display: grid;
   grid-template-columns: 1.5rem 12rem 1fr;
-  gap: var(--cf-space-2);
+  gap: var(--cf-space-sm);
   align-items: baseline;
-  padding: var(--cf-space-2);
-  border: 1px solid var(--cf-border);
+  padding: var(--cf-space-sm);
+  border: 1px solid var(--cf-line);
   border-left-width: 3px;
   border-radius: var(--cf-radius-sm);
   font-size: var(--cf-text-sm);
@@ -573,16 +573,16 @@ body {
 }
 
 .mw-risk--good {
-  border-left-color: var(--cf-status-good, var(--cf-border));
+  border-left-color: var(--cf-success);
 }
 
 .mw-risk--bad {
-  border-left-color: var(--cf-status-crit, var(--cf-border));
+  border-left-color: var(--cf-danger);
 }
 
 /* Neither good nor bad: nobody has looked. It must not read as either. */
 .mw-risk--unknown {
-  border-left-color: var(--cf-border);
+  border-left-color: var(--cf-line);
   color: var(--cf-fg-dim);
 }
 
@@ -603,7 +603,7 @@ body {
  * survive; the value is rendered as a text node by React, never as HTML.
  */
 .mw-prose {
-  margin: var(--cf-space-3) 0 0;
+  margin: var(--cf-space-lg) 0 0;
   max-width: 68ch;
   white-space: pre-wrap;
 }
@@ -615,15 +615,15 @@ body {
 }
 
 .mw-fieldset {
-  margin: 0 0 var(--cf-space-5);
-  padding: var(--cf-space-4);
-  border: 1px solid var(--cf-border);
-  border-radius: var(--cf-radius-md);
+  margin: 0 0 var(--cf-space-2xl);
+  padding: var(--cf-space-xl);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius);
   background: var(--cf-surface);
 }
 
 .mw-fieldset legend {
-  padding: 0 var(--cf-space-2);
+  padding: 0 var(--cf-space-sm);
   color: var(--cf-fg-dim);
   font-size: var(--cf-text-sm);
   letter-spacing: 0.06em;
@@ -631,28 +631,28 @@ body {
 }
 
 .mw-fieldset__note {
-  margin: 0 0 var(--cf-space-3);
+  margin: 0 0 var(--cf-space-lg);
   color: var(--cf-fg-dim);
   font-size: var(--cf-text-sm);
 }
 
 .mw-field {
   display: block;
-  margin: 0 0 var(--cf-space-4);
+  margin: 0 0 var(--cf-space-xl);
 }
 
 .mw-field__label {
   display: block;
-  margin: 0 0 var(--cf-space-1);
+  margin: 0 0 var(--cf-space-2xs);
   font-size: var(--cf-text-sm);
 }
 
 .mw-input {
   width: 100%;
-  padding: var(--cf-space-2);
+  padding: var(--cf-space-sm);
   background: var(--cf-bg);
   color: var(--cf-fg);
-  border: 1px solid var(--cf-border);
+  border: 1px solid var(--cf-line);
   border-radius: var(--cf-radius-sm);
   font: inherit;
 }
@@ -665,7 +665,7 @@ body {
 .mw-field__hint,
 .mw-field__preview {
   display: block;
-  margin: var(--cf-space-1) 0 0;
+  margin: var(--cf-space-2xs) 0 0;
   color: var(--cf-fg-dim);
   font-size: var(--cf-text-xs);
 }
@@ -677,23 +677,23 @@ body {
 /* A problem is a sentence, never a red outline on its own. */
 .mw-field__problem {
   display: block;
-  margin: var(--cf-space-1) 0 0;
+  margin: var(--cf-space-2xs) 0 0;
   font-size: var(--cf-text-xs);
-  color: var(--cf-status-crit, var(--cf-fg));
+  color: var(--cf-danger);
 }
 
 .mw-choices {
   display: grid;
-  gap: var(--cf-space-2);
+  gap: var(--cf-space-sm);
 }
 
 .mw-choice {
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-areas: 'radio title' 'radio note';
-  gap: 0 var(--cf-space-2);
-  padding: var(--cf-space-3);
-  border: 1px solid var(--cf-border);
+  gap: 0 var(--cf-space-sm);
+  padding: var(--cf-space-lg);
+  border: 1px solid var(--cf-line);
   border-radius: var(--cf-radius-sm);
   cursor: pointer;
 }
@@ -722,9 +722,9 @@ body {
 .mw-actions {
   display: flex;
   align-items: center;
-  gap: var(--cf-space-3);
+  gap: var(--cf-space-lg);
   flex-wrap: wrap;
-  margin: var(--cf-space-4) 0 0;
+  margin: var(--cf-space-xl) 0 0;
 }
 
 .mw-actions__note {
@@ -751,7 +751,7 @@ body {
 
 .mw-table__caption {
   caption-side: bottom;
-  margin-top: var(--cf-space-2);
+  margin-top: var(--cf-space-sm);
   color: var(--cf-fg-dim);
   font-size: var(--cf-text-xs);
   text-align: left;
@@ -759,8 +759,8 @@ body {
 
 .mw-table th,
 .mw-table td {
-  padding: var(--cf-space-2);
-  border-bottom: 1px solid var(--cf-border);
+  padding: var(--cf-space-sm);
+  border-bottom: 1px solid var(--cf-line);
   text-align: left;
   vertical-align: top;
 }
@@ -787,7 +787,7 @@ body {
 
 .mw-table__sub {
   display: block;
-  margin-top: var(--cf-space-1);
+  margin-top: var(--cf-space-2xs);
   color: var(--cf-fg-dim);
   font-size: var(--cf-text-xs);
 }
