@@ -11,21 +11,29 @@
  * (`mint/src/server.ts:572`) make no `authenticate()` call at all. See `src/lib/routes.ts`.
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
- * ── The `/auth/me` shape, read correctly ──────────────────────────────────────────────────────
+ * ── The `/auth/me` shape ──────────────────────────────────────────────────────────────────────
  *
  * Identity answers `{ user: {...}, session: {...}, organisations: [...] }` — the profile is
- * NESTED under `user` (`identity/src/server.ts:891-903`, with the body built by `toPublicUser` at
- * `identity/src/users.ts:52-63`). `micro-web-template`'s auth.tsx declares
- * `interface Me { handle?, roles? }` and reads those fields off the TOP level, where they do not
- * exist — and hub-web, site, foresight-web and foresight-admin-web all inherited it.
+ * NESTED under `user`. The route is `identity/src/server.ts:891-903` and the body is built by
+ * `toPublicUser` at `identity/src/users.ts:52-63`; both citations were re-read against the source
+ * for this repository rather than carried over.
  *
- * The consequence is not cosmetic. `roles` is then always null, so `isAdmin` in the shared company
- * bar is always false, and the switcher hides the three `adminOnly` entries from every operator who
- * is signed in. On this surface it costs the handle in the bar as well: a signed-in customer sees
- * an anonymous-looking chrome over their own launches.
+ * That shape is worth stating because the estate got it wrong once, at the root: the web template
+ * declared `interface Me { handle?, roles? }` and read both fields off the TOP level, where they
+ * are not, and four frontends inherited it — `roles` was then always null, `isAdmin` in the shared
+ * company bar was always false, and the switcher hid every `adminOnly` entry from every signed-in
+ * operator.
  *
- * Read correctly here, with the flat shape kept as a FALLBACK so a proxy or an older build on the
- * rollback path still signs somebody in. `test/auth.test.ts` proves both shapes.
+ * **It has since been fixed everywhere, and this comment says so rather than describing an estate
+ * that no longer exists.** `micro-web-template/src/lib/auth.tsx:26-32` now declares the nested
+ * shape and reads `me?.user?.handle` / `me?.user?.roles` (lines 98-99), and hub-web, site,
+ * foresight-web, foresight-admin-web and market-web all do the same. A README that had gone on
+ * claiming otherwise would be the estate's own recurring defect — a document describing something
+ * other than reality — pointed at its own fix.
+ *
+ * What is NOT inherited from the template is the flat FALLBACK below, which is kept so that a
+ * proxy or an older build on the rollback path still signs somebody in, and the nested value wins
+ * when both are present. `test/auth.test.ts` proves all three cases.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 import {

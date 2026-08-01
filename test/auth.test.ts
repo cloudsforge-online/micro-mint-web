@@ -2,20 +2,22 @@
  * Reading the customer out of `/auth/me`, in the shape identity actually answers.
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS FILE EXISTS TO STOP BEING INHERITED — A SIXTH TIME.
+ * A DEFECT THAT IS FIXED, AND A TEST THAT KEEPS IT FIXED.
  *
  * Identity answers `{ user: {...}, session: {...}, organisations: [...] }` — the profile is NESTED
  * under `user` (`identity/src/server.ts:891-903`, body built by `toPublicUser` at
- * `identity/src/users.ts:52-63`). `micro-web-template` declares `interface Me { handle?, roles? }`
- * and reads those fields off the TOP level, where they are not, and hub-web, site, foresight-web
- * and foresight-admin-web all inherited it.
+ * `identity/src/users.ts:52-63`; both re-read against the source for this repository).
  *
- * The consequence is not cosmetic. `roles` is then always null, so `isAdmin` in the shared company
- * bar is always false and the switcher hides the three `adminOnly` entries from every operator who
- * is signed in. On this surface it also costs the handle in the bar: a signed-in customer gets an
- * anonymous-looking chrome over their own launches.
+ * The web template once declared `interface Me { handle?, roles? }` and read both fields off the
+ * TOP level, where they are not, and four frontends inherited it: `roles` was always null, `isAdmin`
+ * in the shared company bar was always false, and the switcher hid every `adminOnly` entry from
+ * every signed-in operator.
  *
- * Reported to `micro-web-template`; read correctly here, with the flat shape kept as a fallback.
+ * **That is fixed upstream now** — `micro-web-template/src/lib/auth.tsx:26-32` declares the nested
+ * shape and lines 98-99 read `me?.user?.handle` and `me?.user?.roles`, and hub-web, site,
+ * foresight-web, foresight-admin-web and market-web all match. So this file is not a correction of
+ * anybody; it is the assertion that stops the reading drifting BACK, plus the flat fallback the
+ * template does not carry, for a proxy or an older build on the rollback path.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 import assert from 'node:assert/strict'

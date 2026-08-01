@@ -34,8 +34,12 @@ const ci = read('.github/workflows/ci.yml')
  *
  * The file's own header quotes the directive it forbids, in order to explain why the routes are
  * enumerated by hand — so a grep over the raw text matches the warning and fails a correct file.
- * The rule is about DIRECTIVES; strip the prose before checking it. The web template's own CI has
- * exactly this bug and fails on its own pristine config.
+ * The rule is about DIRECTIVES; strip the prose before checking it.
+ *
+ * The web template's CI now strips first too (`micro-web-template/.github/workflows/ci.yml:106`,
+ * which writes `/tmp/nginx.effective`), as does hub-web's (`hub-web/.github/workflows/ci.yml:142`).
+ * Both were checked for this repository rather than assumed: the same claim in micro-admin-web has
+ * since gone stale, and repeating it would be describing an estate that no longer exists.
  */
 const directives = nginx
   .split('\n')

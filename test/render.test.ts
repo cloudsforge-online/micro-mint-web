@@ -27,8 +27,11 @@ const read = (file: string): string => readFileSync(new URL(`../${file}`, import
  *
  * Needed for the checks that forbid a STRING, because the files here explain the rules they follow
  * — token.tsx quotes "deployed" in order to say why it is not rendered — and a grep over the raw
- * text therefore matches the rationale and fails a correct file. hub-web's CI has exactly this bug
- * in its nginx check. A guard that fires on its own explanation trains people to delete the
+ * text therefore matches the rationale and fails a correct file. Six guards in this estate have
+ * made exactly that mistake — a CI rule firing on the comment explaining it, a hostname guard
+ * tripping on the file documenting the rule, an nginx guard matching its own warning. Every one of
+ * them was worked around by rewording the comment, which means the rule quietly deleted its own
+ * documentation. A guard that fires on its own explanation trains people to delete the
  * explanation.
  */
 function withoutComments(source: string): string {

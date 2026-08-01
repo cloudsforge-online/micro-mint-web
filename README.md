@@ -189,12 +189,19 @@ case — a project page exists to be sent to somebody — so `og-1200x630.png` i
 relative path, and asserted. The og metadata is declared exactly once, which is checked, because
 `foresight-web/index.html` declares three of the properties twice.
 
-`micro-web-template`'s Dockerfile does not copy `public/` into the build context, so every frontend
-cut from it builds an image whose `dist/` has no icons — while a brand test exactly like this one
-passes, because it reads the source tree. Here that would also 404 the og card and blank the preview
-on every shared project page. The `COPY public ./public` line is present, is asserted by the brand
-test, and is **probed against the running container** in CI, which is the only check that could have
-caught it.
+The web template's Dockerfile once did not copy `public/` into the build context, so every frontend
+cut from it built an image whose `dist/` had no icons — while a brand test exactly like this one
+passed, because it reads the source tree. Four frontends shipped that way. **It is fixed upstream**
+(`micro-web-template/Dockerfile:39`) and every frontend in the estate carries the line, so the
+guard here is a guard rather than a correction; it was re-checked against the source for this
+repository rather than inherited from a sibling's comment, because that claim had already gone
+stale in `micro-admin-web`.
+
+It is still worth its lines. Reading a Dockerfile is not evidence that an image serves a file, so
+the `COPY public ./public` line is asserted by the brand test **and probed against the running
+container** in CI — which is the only check that could have caught the original defect. On this
+surface a missing asset would also 404 the og card and blank the preview on every shared project
+page.
 
 ## Known gaps
 
@@ -209,6 +216,15 @@ caught it.
   PUT would silently blank them, which is why they are sent explicitly rather than omitted.
 - **`verificationStatus` is displayed and not actionable.** Claiming or verifying a project is
   market's surface, not this one.
+- **Two defects this repository was briefed to correct were already fixed**, and are recorded here
+  rather than repeated as live: the web template reads `/auth/me` nested
+  (`micro-web-template/src/lib/auth.tsx:26-32`, `:98-99`) and copies `public/`
+  (`micro-web-template/Dockerfile:39`), and hub-web, site, foresight-web, foresight-admin-web and
+  market-web all match on both. `micro-admin-web`'s comments still describe them as open. Every
+  citation in this README was re-read against source for that reason.
+- **`foresight-web/index.html` declares `og:type`, `og:title` and `og:description` twice**
+  (lines 30-33 and 43-46). The second set wins in every crawler and the first is dead text nobody
+  edits. Still live; reported. `test/brand-chrome.test.ts` here asserts each property appears once.
 - **The one temporary thing:** `@cloudsforge/ui` is consumed as `link:../ui/packages/ui` because it
   is unpublished. The day it is published the specifier becomes `^1.0.0`, and with it go the second
   checkout in `.github/workflows/ci.yml`, the `uipkg` build context in the `Dockerfile`, and the

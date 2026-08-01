@@ -216,8 +216,8 @@ jobs:
       - name: The SPA fallback keeps its 404
         # Comments are stripped first. nginx.conf's own header QUOTES the directive it forbids, in
         # order to explain why the routes are enumerated by hand, so a grep over the raw file
-        # matches the warning and fails a correct config. (The web template's copy of this step
-        # does exactly that, and fails on its own pristine nginx.conf.)
+        # matches the warning and would fail a correct config. Every copy of this step in the estate
+        # strips first — checked, not assumed.
         run: |
           set -uo pipefail
           directives=$(grep -v '^[[:space:]]*#' nginx.conf)
@@ -375,9 +375,10 @@ jobs:
           [ "${robots:-0}" = "0" ] || { echo "::error::this public surface sends X-Robots-Tag"; fail=1; }
 
           # The brand chrome is SERVED by the image, not merely committed to the repository. The web
-          # template's Dockerfile does not copy public/ into the build context, so every frontend cut
-          # from it ships an image with no icon in it while its own brand test passes — and here that
-          # would blank the link preview on every shared project page.
+          # template's Dockerfile once did not copy public/ into the build context, so four frontends
+          # shipped an image with no icon in it while their own brand test passed. Fixed upstream at
+          # micro-web-template/Dockerfile:39; this probe is what would have caught it, and here a
+          # missing asset would also blank the link preview on every shared project page.
           for asset in favicon-32x32.png favicon-192x192.png og-1200x630.png; do
             code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080/$asset" || true)
             [ "$code" = "200" ] || { echo "::error::/$asset returned $code from the image"; fail=1; }

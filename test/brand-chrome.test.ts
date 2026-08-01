@@ -15,10 +15,14 @@
  *
  * ── And the icons must reach the IMAGE, not only the repository ────────────────────────────────
  *
- * The last test is the one that matters most on this surface. `micro-web-template`'s Dockerfile
- * does not copy `public/`, so every frontend cut from it builds an image whose `dist/` has no
- * icons — while a test exactly like this one passes, because it reads the SOURCE tree. Here that
- * would also mean `og:image` 404ing and every shared link rendering a blank card.
+ * The last two tests are the ones that matter most on this surface. The web template's Dockerfile
+ * once did not copy `public/`, so every frontend cut from it built an image whose `dist/` had no
+ * icons — while a test exactly like this one passed, because it reads the SOURCE tree. That is
+ * fixed upstream (`micro-web-template/Dockerfile:39`) and in every frontend, so the tests below
+ * are a guard rather than a correction. They are still worth their lines: reading a Dockerfile is
+ * not evidence that an image serves a file, which is why the second of them requires CI to CURL
+ * the running container. Here a missing public/ would also 404 `og:image` and blank the link
+ * preview on every shared project page.
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -117,11 +121,11 @@ test('the accent and substrate are declared on <html>, before React can paint', 
 })
 
 test('the Dockerfile copies public/ into the build context', () => {
-  // `micro-web-template`'s Dockerfile copies tsconfig, vite.config, index.html and src — and not
-  // public — so Vite has no publicDir to copy and every frontend cut from it builds an image whose
-  // dist/ has no favicon in it, while this very test passes because it reads the SOURCE tree. On
-  // this surface it would also 404 the og card and blank every shared link preview.
-  // Reported to micro-web-template; corrected here, and pinned so it cannot be lost again.
+  // Without it Vite has no publicDir to copy into dist, and the image ships with no icons at all
+  // while this very test passes, because it reads the SOURCE tree. That is how four frontends
+  // shipped iconless. Fixed in the template at micro-web-template/Dockerfile:39; pinned here so it
+  // cannot be lost again, and backed by the container probe below, which is the only check that
+  // could have caught it in the first place.
   const dockerfile = readFileSync(at('Dockerfile'), 'utf8')
   assert.match(
     dockerfile,

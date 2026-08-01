@@ -35,19 +35,22 @@ COPY tsconfig.json vite.config.ts index.html ./
 COPY src ./src
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════
-# public/ — AND THIS LINE IS NOT IN THE TEMPLATE.
+# public/ — THE LINE THAT ONCE WAS NOT IN THE TEMPLATE.
 #
 # Vite copies `publicDir` into `dist` during the build, so the favicons and the og card only reach
-# the image if they are in the build context. `micro-web-template`'s Dockerfile copies tsconfig,
-# vite.config, index.html and src — and not public — so every frontend cut from it builds an image
-# whose `dist/` has no favicon in it, while `test/brand-chrome.test.ts` passes because it reads the
-# SOURCE tree. The icons are wired, committed, tested, and absent from the artefact that is
-# actually served: the tab shows the browser's blank-page glyph, and — on this surface, which is
-# the one whose links get shared — `og:image` 404s and every link preview renders blank.
+# the image if they are in the build context. The web template's Dockerfile used to copy tsconfig,
+# vite.config, index.html and src — and not public — so every frontend cut from it built an image
+# whose `dist/` had no favicon in it, while `brand-chrome.test.ts` went on passing because it reads
+# the SOURCE tree. Four frontends shipped that way: icons wired, committed, tested, and absent from
+# the artefact actually served.
 #
-# Reported to `micro-web-template`; corrected here, as micro-admin-web corrected it. Both
-# `test/brand-chrome.test.ts` (which reads this file) and the image probe in ci.yml (which curls
-# the running container) fail without this line, so it cannot be lost in a later edit.
+# It is fixed upstream now (`micro-web-template/Dockerfile:39`), and every frontend in the estate
+# carries the line — so this comment records a closed defect rather than an open one. The reason to
+# keep saying it is that a copy is only as good as the check under it: on THIS surface a missing
+# public/ would also 404 `og:image` and blank the link preview on every shared project page, which
+# nothing about the source tree would reveal. Both `test/brand-chrome.test.ts` (which reads this
+# file) and the image probe in ci.yml (which curls the running container for each asset) fail
+# without this line.
 # ══════════════════════════════════════════════════════════════════════════════════════════════
 COPY public ./public
 
