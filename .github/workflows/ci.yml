@@ -132,7 +132,7 @@ jobs:
             echo "::error::the route cross-check skipped itself while micro-mint was present"
             exit 1
           fi
-          printf '%s\n' "$out" | grep -q 'is registered at mint/src/server.ts:354' || {
+          printf '%s\n' "$out" | grep -qE 'is registered at mint/src/server\.ts:[0-9]+' || {
             echo "::error::the route cross-check did not run against mint/src/server.ts"
             exit 1
           }
@@ -145,7 +145,21 @@ jobs:
         run: |
           set -euo pipefail
           cp test/mint.test.ts "$RUNNER_TEMP/mint.test.ts.orig"
-          sed -i "s|path: '/v1/catalogue', line: 340|path: '/v1/catalogue', line: 341|" test/mint.test.ts
+          # The line number is READ, never written here. This step used to hardcode it, and the day
+          # micro-mint's route table moved the sed matched nothing, the mutation did not happen,
+          # the suite passed, and this step failed — reporting "the cross-check passed a citation
+          # off by one line" when the truth was that no citation had been bent. A mutation test
+          # that names the value it mutates goes stale exactly when the thing it guards changes.
+          line=$(grep -oE "path: '/v1/catalogue', line: [0-9]+" test/mint.test.ts | grep -oE '[0-9]+$')
+          if [ -z "${line:-}" ]; then
+            echo "::error::no '/v1/catalogue' citation to bend — SURFACE has been renamed and this step is reading nothing"
+            exit 1
+          fi
+          sed -i "s|path: '/v1/catalogue', line: $line|path: '/v1/catalogue', line: $((line + 1))|" test/mint.test.ts
+          grep -q "path: '/v1/catalogue', line: $((line + 1))" test/mint.test.ts || {
+            echo "::error::the mutation did not apply; this step would grade an unmutated file"
+            exit 1
+          }
           if node --import tsx --test test/mint.test.ts >/dev/null 2>&1; then
             echo "::error::the cross-check passed a citation off by one line — it is not reading the service"
             cp "$RUNNER_TEMP/mint.test.ts.orig" test/mint.test.ts
