@@ -383,7 +383,7 @@ function ProjectPageEditor({ tokenId, deployed }: { tokenId: string; deployed: b
       <label className="mw-field">
         <span className="mw-field__label">Description</span>
         <textarea
-          className="mw-input mw-input--area"
+          className="cf-input mw-area"
           rows={5}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -393,7 +393,7 @@ function ProjectPageEditor({ tokenId, deployed }: { tokenId: string; deployed: b
       <label className="mw-field">
         <span className="mw-field__label">Risk disclosures</span>
         <textarea
-          className="mw-input mw-input--area"
+          className="cf-input mw-area"
           rows={4}
           value={riskDisclosures}
           onChange={(e) => setRisk(e.target.value)}

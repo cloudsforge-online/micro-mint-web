@@ -647,17 +647,8 @@ body {
   font-size: var(--cf-text-sm);
 }
 
-.mw-input {
-  width: 100%;
-  padding: var(--cf-space-sm);
-  background: var(--cf-bg);
-  color: var(--cf-fg);
-  border: 1px solid var(--cf-line);
-  border-radius: var(--cf-radius-sm);
-  font: inherit;
-}
 
-.mw-input--area {
+.mw-area {
   resize: vertical;
   font-family: var(--cf-font-sans);
 }

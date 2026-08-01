@@ -135,7 +135,7 @@ export function LaunchPage() {
           <label className="mw-field">
             <span className="mw-field__label">Chain</span>
             <select
-              className="mw-input"
+              className="cf-input"
               value={draft.chain}
               onChange={(e) => set('chain', e.target.value)}
             >
@@ -150,7 +150,7 @@ export function LaunchPage() {
           <label className="mw-field">
             <span className="mw-field__label">Network</span>
             <select
-              className="mw-input"
+              className="cf-input"
               value={draft.network}
               onChange={(e) => set('network', e.target.value)}
             >
@@ -183,7 +183,7 @@ export function LaunchPage() {
             problem={showProblems ? problemFor('name')?.message : undefined}
           >
             <input
-              className="mw-input"
+              className="cf-input"
               value={draft.name}
               maxLength={MAX_NAME}
               onChange={(e) => set('name', e.target.value)}
@@ -196,7 +196,7 @@ export function LaunchPage() {
             problem={showProblems ? problemFor('symbol')?.message : undefined}
           >
             <input
-              className="mw-input cf-num"
+              className="cf-input cf-num"
               value={draft.symbol}
               maxLength={12}
               onChange={(e) => set('symbol', e.target.value.toUpperCase())}
@@ -209,7 +209,7 @@ export function LaunchPage() {
             problem={showProblems ? problemFor('decimals')?.message : undefined}
           >
             <input
-              className="mw-input cf-num"
+              className="cf-input cf-num"
               inputMode="numeric"
               value={draft.decimals}
               onChange={(e) => set('decimals', e.target.value)}
@@ -222,7 +222,7 @@ export function LaunchPage() {
             problem={showProblems ? problemFor('supply')?.message : undefined}
           >
             <input
-              className="mw-input cf-num"
+              className="cf-input cf-num"
               inputMode="numeric"
               value={draft.supply}
               onChange={(e) => set('supply', e.target.value.trim())}
@@ -296,7 +296,7 @@ export function LaunchPage() {
               problem={showProblems ? problemFor('cap')?.message : undefined}
             >
               <input
-                className="mw-input cf-num"
+                className="cf-input cf-num"
                 inputMode="numeric"
                 value={draft.cap}
                 onChange={(e) => set('cap', e.target.value.trim())}
@@ -314,7 +314,7 @@ export function LaunchPage() {
             problem={showProblems ? problemFor('ownerAddress')?.message : undefined}
           >
             <input
-              className="mw-input cf-num"
+              className="cf-input cf-num"
               value={draft.ownerAddress}
               onChange={(e) => set('ownerAddress', e.target.value.trim())}
             />
@@ -326,7 +326,7 @@ export function LaunchPage() {
             problem={showProblems ? problemFor('ownerWalletId')?.message : undefined}
           >
             <input
-              className="mw-input cf-num"
+              className="cf-input cf-num"
               value={draft.ownerWalletId}
               onChange={(e) => set('ownerWalletId', e.target.value.trim())}
             />
