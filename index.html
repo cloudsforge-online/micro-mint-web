@@ -1,0 +1,67 @@
+<!doctype html>
+<!--
+  data-cf-product picks the accent ramp and data-cf-substrate the ash ramp, both from
+  @cloudsforge/ui/tokens.css. They are on <html> and set STATICALLY here rather than by React,
+  because a page that paints before the attributes land flashes the default ember and then changes
+  colour.
+
+  'create' is brass, #b28e1e — its own block in tokens.css (`ui/packages/ui/src/tokens.css:356`),
+  and the accent the registry gives this surface (`ui/packages/ui/src/surfaces.ts:214-225`).
+
+  'warm' is the ash ramp the brand marks in brand/assets/create/ are drawn on, and the one every
+  other product frontend in the estate uses.
+-->
+<html lang="en-GB" data-cf-product="create" data-cf-substrate="warm">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="colour-scheme" content="dark" />
+    <!--
+      The build that produced this bundle. Stamped by the Dockerfile, read by src/lib/obs.ts, and
+      the reason an error report can be pinned to the deploy that introduced it. It is an identity
+      rather than a configuration: it names the artefact, it does not tell it where it is running.
+    -->
+    <meta name="cf-release" content="dev" />
+
+    <meta
+      name="description"
+      content="Launch a token on Ember, Ethereum or Solana: pick the contract, pay in Shards, deploy, and publish a project page a buyer can check against the chain."
+    />
+
+    <!--
+      Brand chrome for the `create` surface, from micro-brand's assets/create/ set, copied
+      byte-identical — test/brand-chrome.test.ts compares the bytes in both directions.
+
+      Unlike `admin`, this surface DOES ship an og card. brand/assets/create/ holds one
+      (og-1200x630.png) because Forge Create is a public product whose project pages are shared
+      outward on purpose: 18-build-status.md §3.3k drew exactly that distinction when it recorded
+      that the operator console deliberately has none.
+    -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192x192.png" />
+
+    <!--
+      ONE og block, not two. foresight-web/index.html declares og:type, og:title and og:description
+      twice — the second set silently wins in every crawler and the first is dead text nobody
+      edits. Reported; not repeated here.
+
+      The image is a RELATIVE path so the card resolves against whichever origin served the page,
+      which is the same rule the rest of this bundle follows for hosts.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Forge Create" />
+    <meta
+      property="og:description"
+      content="Launch a token, cross-chain. Pick the contract, pay in Shards, deploy, and publish a project page checked against the chain."
+    />
+    <meta property="og:image" content="/og-1200x630.png" />
+
+    <title>Forge Create</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

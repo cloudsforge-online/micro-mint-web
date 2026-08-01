@@ -1,0 +1,139 @@
+/**
+ * A frontend ships its own browser chrome, or it ships none at all.
+ *
+ * FOUR FINISHED FRONTENDS SHIPPED WITH NO FAVICON AT ALL and went green in CI, because nothing
+ * anywhere asserted that a page has an icon (18-build-status.md §3.3e). The checks below are the
+ * template's, kept in both directions and unweakened.
+ *
+ * ── This surface DOES ship an og card, and that is the decision rather than the default ────────
+ *
+ * `micro-admin-web` asserts the deliberate ABSENCE of one, because §3.3k recorded that nobody
+ * shares an operator console outward. The same paragraph draws the opposite conclusion for public
+ * surfaces, and Forge Create is the clearest case in the estate: a project page exists to be sent
+ * to somebody. `brand/assets/create/` holds `og-1200x630.png`, so it is shipped, linked, and
+ * asserted here — in both directions, so removing it later fails the build.
+ *
+ * ── And the icons must reach the IMAGE, not only the repository ────────────────────────────────
+ *
+ * The last test is the one that matters most on this surface. `micro-web-template`'s Dockerfile
+ * does not copy `public/`, so every frontend cut from it builds an image whose `dist/` has no
+ * icons — while a test exactly like this one passes, because it reads the SOURCE tree. Here that
+ * would also mean `og:image` 404ing and every shared link rendering a blank card.
+ */
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
+const at = (p: string) => fileURLToPath(new URL(`../${p}`, import.meta.url))
+const HTML = readFileSync(at('index.html'), 'utf8')
+
+/** The sizes a browser and an install prompt actually ask for. */
+const REQUIRED_ICONS = ['favicon-32x32.png', 'favicon-192x192.png']
+
+/** The card a chat client, a search result and a social post render. */
+const OG_CARD = 'og-1200x630.png'
+
+test('the icons a browser asks for are present in public/', () => {
+  const missing = REQUIRED_ICONS.filter((f) => !existsSync(at(`public/${f}`)))
+  assert.deepEqual(
+    missing,
+    [],
+    `public/ is missing ${missing.join(', ')} — copy them from micro-brand's assets/create/`,
+  )
+})
+
+test('index.html links every icon it ships, and ships every icon it links', () => {
+  // Both directions. A link to a file that is not there is a 404 in every tab; a file nobody links
+  // is dead weight that looks like it is working.
+  for (const f of REQUIRED_ICONS) {
+    assert.ok(HTML.includes(f), `index.html does not link /${f}`)
+  }
+  for (const m of HTML.matchAll(/href="\/(favicon[^"]*)"/g)) {
+    assert.ok(existsSync(at(`public/${m[1]}`)), `index.html links /${m[1]}, which is not in public/`)
+  }
+})
+
+test('the icons are this surface’s own, not the template’s placeholders', () => {
+  // The template ships the company marks so that a freshly cut frontend is never iconless. Leaving
+  // them in place passes every check above and puts the wrong brand in the tab.
+  const brand = '../brand/assets/create'
+  for (const icon of [...REQUIRED_ICONS, 'favicon-512x512.png', OG_CARD]) {
+    const source = at(`${brand}/${icon}`)
+    if (!existsSync(source)) continue
+    assert.deepEqual(
+      readFileSync(at(`public/${icon}`)),
+      readFileSync(source),
+      `public/${icon} is not the byte-identical copy from brand/assets/create/`,
+    )
+  }
+})
+
+test('the og card is shipped, because this surface’s links are shared outward', () => {
+  assert.ok(existsSync(at(`public/${OG_CARD}`)), `public/${OG_CARD} is missing`)
+  assert.match(HTML, /property="og:image"/, 'index.html declares no og:image')
+  assert.match(HTML, /property="og:title"/, 'index.html declares no og:title')
+  assert.match(HTML, /property="og:description"/, 'index.html declares no og:description')
+})
+
+test('the og:image is a RELATIVE path, so the card resolves against whichever origin served it', () => {
+  // An absolute one would be a hostname baked into the bundle — the exact thing this repository
+  // has no build-time configuration in order to avoid.
+  const m = /property="og:image" content="([^"]+)"/.exec(HTML)
+  assert.ok(m, 'no og:image content')
+  assert.ok(m[1]?.startsWith('/'), `og:image is ${m[1]}, which is not a relative path`)
+  assert.ok(existsSync(at(`public${m[1]}`)), `og:image points at ${m[1]}, which is not in public/`)
+})
+
+test('the og metadata is declared ONCE', () => {
+  // foresight-web/index.html declares og:type, og:title and og:description twice. The second set
+  // silently wins in every crawler and the first is dead text that nobody edits. Reported there.
+  for (const property of ['og:type', 'og:title', 'og:description', 'og:image']) {
+    const count = [...HTML.matchAll(new RegExp(`property="${property}"`, 'g'))].length
+    assert.equal(count, 1, `${property} is declared ${count} times`)
+  }
+})
+
+test('index.html does NOT tell crawlers to stay away', () => {
+  // The mirror of admin-web's assertion, and the reason this file differs from that one. A noindex
+  // here would suppress the project pages this product exists to have read.
+  assert.doesNotMatch(HTML, /name="robots"[^>]*noindex/)
+})
+
+test('public/ holds no stray brand asset that nothing links', () => {
+  // A file nobody links is dead weight that looks like it is working, and this is how an old
+  // product's mark survives a rebrand in one repository.
+  const linked = new Set([...HTML.matchAll(/(?:href|content)="\/([^"]+\.png)"/g)].map((m) => m[1]))
+  const stray = readdirSync(at('public')).filter((f) => f.endsWith('.png') && !linked.has(f))
+  assert.deepEqual(stray, [], `public/ holds ${stray.join(', ')}, which index.html does not link`)
+})
+
+test('the accent and substrate are declared on <html>, before React can paint', () => {
+  // Set by React, the page paints the default ember and then changes colour. `create` has its own
+  // block in tokens.css (`ui/packages/ui/src/tokens.css:356`); admin's did not, and the console
+  // wore the company's colour by accident for as long as that was true.
+  assert.match(HTML, /data-cf-product="create"/)
+  assert.match(HTML, /data-cf-substrate="warm"/)
+})
+
+test('the Dockerfile copies public/ into the build context', () => {
+  // `micro-web-template`'s Dockerfile copies tsconfig, vite.config, index.html and src — and not
+  // public — so Vite has no publicDir to copy and every frontend cut from it builds an image whose
+  // dist/ has no favicon in it, while this very test passes because it reads the SOURCE tree. On
+  // this surface it would also 404 the og card and blank every shared link preview.
+  // Reported to micro-web-template; corrected here, and pinned so it cannot be lost again.
+  const dockerfile = readFileSync(at('Dockerfile'), 'utf8')
+  assert.match(
+    dockerfile,
+    /^COPY public \.\/public$/m,
+    'the Dockerfile does not copy public/, so the built image will have no favicon',
+  )
+})
+
+test('CI probes the running container for the icons AND the card', () => {
+  // The test above reads a file; only a request to the image proves the artefact serves them.
+  const ci = readFileSync(at('.github/workflows/ci.yml'), 'utf8')
+  for (const asset of [...REQUIRED_ICONS, OG_CARD]) {
+    assert.ok(ci.includes(asset), `ci.yml does not probe /${asset} against the image`)
+  }
+})

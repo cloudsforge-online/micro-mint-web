@@ -1,0 +1,793 @@
+/**
+ * This app's own layer, on top of @cloudsforge/ui.
+ *
+ * Two prefixes, deliberately. `wt-` is the shell inherited from the web template — the sub-nav,
+ * the four states, the spinner — and is left alone so a fix upstream can be taken without a
+ * merge. `mw-` is this app's own layer. Neither can collide with, or quietly override, a `cf-`
+ * class from the design system.
+ *
+ * EVERY COLOUR, SPACE AND FONT IS A TOKEN. A literal hex here is a colour that will not follow
+ * the substrate, and a page that does not follow the substrate is the one page in the estate that
+ * looks wrong on a dark display. The ground is the WARM ash ramp set by
+ * `data-cf-substrate="warm"` in index.html — the family the brand marks in
+ * `brand/assets/create/` are drawn on, so the favicon has no visible plate around it. The accent
+ * is brass, #b28e1e, which comes from `[data-cf-product='create']` in @cloudsforge/ui
+ * (`ui/packages/ui/src/tokens.css:356`) and is never written down here.
+ *
+ * ── State is never colour alone ───────────────────────────────────────────────────────────────
+ *
+ * Every `.mw-badge` carries a glyph AND a word; the tone class only tints them. The estate's
+ * reserved status hues sit dE 4.6 apart under protanopia, so a reader who cannot separate them
+ * still reads PAID / DEPLOYING / FAILED. The same rule holds for `.mw-risk`, where the third
+ * state — "not observed" — is the one that must never be mistaken for "no". See
+ * src/lib/format.ts.
+ */
+
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  font-family: var(--cf-font-sans);
+  /* The bar is dark on every surface; the page follows the substrate. */
+  color-scheme: dark;
+}
+
+/* ----------------------------- sub-nav ----------------------------- */
+
+/*
+ * Docked at exactly the bar's height. `--cf-bar-h` is the token the bar itself is sized with, so
+ * the two cannot drift; a copied `46px` would leave a gap or an overlap the day the bar changes,
+ * on every surface at once and on none of the ones anybody rechecked.
+ */
+.wt-subnav {
+  position: sticky;
+  top: var(--cf-bar-h);
+  z-index: 40;
+  background: var(--cf-bg-raised);
+  border-bottom: 1px solid var(--cf-line);
+}
+
+.wt-subnav__inner {
+  display: flex;
+  gap: 0.25rem;
+  align-items: stretch;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.wt-subnav__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  color: var(--cf-fg-dim);
+  text-decoration: none;
+  font-size: 0.875rem;
+  /* The active marker is a 2px underline in the accent, and the LABEL also changes weight and
+     colour: colour is never the only channel. */
+  border-bottom: 2px solid transparent;
+}
+
+.wt-subnav__link:hover {
+  color: var(--cf-fg);
+  background: var(--cf-surface-hover);
+}
+
+.wt-subnav__link.is-active {
+  color: var(--cf-fg);
+  font-weight: 600;
+  border-bottom-color: var(--cf-accent);
+}
+
+.wt-subnav__link:focus-visible {
+  outline: 2px solid var(--cf-accent);
+  outline-offset: -2px;
+}
+
+/* ------------------------------ page ------------------------------- */
+
+.wt-main {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+.wt-page__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.wt-page__title {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+}
+
+.wt-panel {
+  background: var(--cf-surface-solid);
+  border: 1px solid var(--cf-line);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.wt-panel__title {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--cf-fg-dim);
+  font-weight: 600;
+}
+
+.wt-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.wt-banner {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px dashed var(--cf-line-strong);
+  color: var(--cf-fg-dim);
+  font-size: 0.85rem;
+}
+
+.wt-note {
+  color: var(--cf-fg-dim);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+.wt-link {
+  color: var(--cf-accent);
+}
+
+.wt-facts {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.wt-facts dt {
+  color: var(--cf-fg-mute);
+}
+
+.wt-facts dd {
+  margin: 0;
+}
+
+.wt-facts--mono dd {
+  font-family: var(--cf-font-mono, ui-monospace, monospace);
+  font-size: 0.82rem;
+}
+
+/* ------------------------- the four states ------------------------- */
+
+/*
+ * Loading, empty, failed and forbidden differ in SHAPE and WORDS as well as colour: a reader who
+ * cannot separate two hues still has two other channels telling them which of the four they are
+ * looking at.
+ */
+.wt-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding: 3rem 1rem;
+  border-radius: 10px;
+}
+
+.wt-state__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.wt-state__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.wt-state__hint,
+.wt-state__meta {
+  margin: 0;
+  color: var(--cf-fg-dim);
+  font-size: 0.875rem;
+  max-width: 34rem;
+}
+
+.wt-state--empty {
+  /* --cf-line and --cf-danger, not --cf-border and --cf-critical. The template names two custom
+     properties that tokens.css does not define, so every failure and forbidden state in every
+     frontend cut from it falls back to a hard-coded hex and a hard-coded rgba — which is exactly
+     the "does not follow the substrate" defect the header of this file forbids, shipped in the
+     template itself. Reported to micro-web-template; corrected here, and pinned by the
+     "names no literal colour" test in test/render.test.ts. */
+  border: 1px dashed var(--cf-line);
+  color: var(--cf-fg-dim);
+}
+
+.wt-state--failed {
+  border: 1px solid var(--cf-danger);
+}
+
+.wt-state--failed .wt-state__icon,
+.wt-state--forbidden .wt-state__icon {
+  color: var(--cf-danger);
+}
+
+.wt-state--forbidden {
+  border: 1px solid var(--cf-line);
+  background: var(--cf-bg-sunken);
+}
+
+/*
+ * The request id is the string a user reads down a phone line or pastes into a support form, so
+ * it is monospace, selectable and on a line of its own.
+ */
+.wt-reqid {
+  user-select: all;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: var(--cf-bg-sunken);
+  font-family: var(--cf-font-mono, ui-monospace, monospace);
+}
+
+.wt-spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 2px solid var(--cf-line-strong);
+  border-top-color: var(--cf-accent);
+  animation: wt-spin 0.7s linear infinite;
+}
+
+@keyframes wt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A spinner is decoration; a reader who asked for less motion gets a static ring. */
+@media (prefers-reduced-motion: reduce) {
+  .wt-spinner {
+    animation: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The operator console's own layer.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+
+/* ----------------------------- chrome ------------------------------ */
+
+/*
+ * The skip link. Off-screen until focused, then the first thing on the page — the launch form is
+ * long and a keyboard user should not have to tab the navigation to reach it.
+ */
+.mw-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: var(--cf-space-2) var(--cf-space-3);
+  background: var(--cf-accent);
+  color: var(--cf-ash-900);
+  font-weight: 600;
+  border-radius: 0 0 var(--cf-radius-sm) 0;
+}
+
+.mw-skip:focus-visible {
+  left: 0;
+}
+
+/* ------------------------------ heads ------------------------------ */
+
+.mw-head {
+  margin: 0 0 var(--cf-space-5);
+}
+
+.mw-head__eyebrow {
+  margin: 0 0 var(--cf-space-2);
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg-dim);
+}
+
+.mw-head__title {
+  margin: 0;
+  font-size: var(--cf-text-2xl);
+  line-height: 1.15;
+}
+
+.mw-head__symbol {
+  font-size: var(--cf-text-lg);
+  color: var(--cf-fg-dim);
+}
+
+.mw-head__lede {
+  margin: var(--cf-space-3) 0 0;
+  max-width: 62ch;
+  color: var(--cf-fg-dim);
+}
+
+.mw-head__state {
+  display: flex;
+  align-items: center;
+  gap: var(--cf-space-3);
+  flex-wrap: wrap;
+  margin: var(--cf-space-3) 0 0;
+}
+
+.mw-head__meaning {
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+}
+
+/* ----------------------------- panels ------------------------------ */
+
+.mw-panel {
+  margin: 0 0 var(--cf-space-5);
+  padding: var(--cf-space-4);
+  background: var(--cf-surface);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+}
+
+.mw-panel__title {
+  margin: 0 0 var(--cf-space-3);
+  font-size: var(--cf-text-lg);
+}
+
+.mw-panel__subtitle {
+  margin: var(--cf-space-4) 0 var(--cf-space-2);
+  font-size: var(--cf-text-md);
+}
+
+.mw-panel__note {
+  margin: var(--cf-space-2) 0 0;
+  max-width: 72ch;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+}
+
+/* ------------------------------ notes ------------------------------ */
+
+.mw-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cf-space-2);
+  margin: 0 0 var(--cf-space-4);
+  padding: var(--cf-space-3);
+  border: 1px solid var(--cf-border);
+  border-left-width: 3px;
+  border-radius: var(--cf-radius-sm);
+  background: var(--cf-surface);
+  font-size: var(--cf-text-sm);
+}
+
+.mw-note__icon {
+  flex: none;
+  line-height: 1.4;
+}
+
+/* The glyph carries the meaning; the border colour only reinforces it. */
+.mw-note--warn {
+  border-left-color: var(--cf-status-warn, var(--cf-accent));
+}
+
+.mw-note--crit {
+  border-left-color: var(--cf-status-crit, var(--cf-accent));
+}
+
+/* ------------------------------ price ------------------------------ */
+
+.mw-price {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--cf-space-2);
+}
+
+.mw-price__value {
+  font-size: var(--cf-text-2xl);
+  color: var(--cf-accent);
+}
+
+.mw-price__unit {
+  color: var(--cf-fg-dim);
+}
+
+/* ------------------------------ tiers ------------------------------ */
+
+.mw-tiers {
+  list-style: none;
+  margin: var(--cf-space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--cf-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+.mw-tier {
+  padding: var(--cf-space-3);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+}
+
+.mw-tier__title {
+  margin: 0;
+  font-size: var(--cf-text-md);
+}
+
+.mw-tier__contract {
+  margin: var(--cf-space-1) 0 0;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+}
+
+.mw-tier__blurb {
+  margin: var(--cf-space-2) 0 0;
+  font-size: var(--cf-text-sm);
+}
+
+.mw-tier__facts {
+  margin: var(--cf-space-3) 0 0;
+  font-size: var(--cf-text-sm);
+}
+
+.mw-tier__facts div {
+  display: flex;
+  gap: var(--cf-space-2);
+  margin: 0 0 var(--cf-space-1);
+}
+
+.mw-tier__facts dt {
+  flex: none;
+  min-width: 9rem;
+  color: var(--cf-fg-dim);
+}
+
+.mw-tier__facts dd {
+  margin: 0;
+}
+
+.mw-cta {
+  margin: var(--cf-space-5) 0;
+}
+
+/* ------------------------------ facts ------------------------------ */
+
+.mw-facts {
+  margin: 0;
+  display: grid;
+  gap: var(--cf-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.mw-fact__label {
+  margin: 0;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+}
+
+.mw-fact__value {
+  margin: var(--cf-space-1) 0 0;
+}
+
+.mw-fact__sub {
+  display: block;
+  margin-top: var(--cf-space-1);
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-xs);
+}
+
+/*
+ * An absence, rendered as words rather than as a dash. "Not observed" is a different statement
+ * from "no", and the reader is entitled to the difference — mint/src/projectpages.ts:153-154.
+ */
+.mw-absent {
+  color: var(--cf-fg-dim);
+  font-style: italic;
+}
+
+.mw-absent--block {
+  display: block;
+  margin: var(--cf-space-2) 0 0;
+}
+
+/* ----------------------------- badges ------------------------------ */
+
+.mw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cf-space-1);
+  padding: 0.1rem var(--cf-space-2);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  font-size: var(--cf-text-xs);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.mw-badge__word {
+  font-weight: 600;
+}
+
+.mw-badge--good {
+  border-color: var(--cf-status-good, var(--cf-border));
+}
+
+.mw-badge--warn {
+  border-color: var(--cf-status-warn, var(--cf-border));
+}
+
+.mw-badge--crit {
+  border-color: var(--cf-status-crit, var(--cf-border));
+}
+
+.mw-badge--busy {
+  border-color: var(--cf-accent);
+}
+
+.mw-badge--mute {
+  color: var(--cf-fg-dim);
+}
+
+/* ------------------------------ risks ------------------------------ */
+
+.mw-risks {
+  list-style: none;
+  margin: var(--cf-space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--cf-space-2);
+}
+
+.mw-risk {
+  display: grid;
+  grid-template-columns: 1.5rem 12rem 1fr;
+  gap: var(--cf-space-2);
+  align-items: baseline;
+  padding: var(--cf-space-2);
+  border: 1px solid var(--cf-border);
+  border-left-width: 3px;
+  border-radius: var(--cf-radius-sm);
+  font-size: var(--cf-text-sm);
+}
+
+.mw-risk__label {
+  color: var(--cf-fg-dim);
+}
+
+.mw-risk--good {
+  border-left-color: var(--cf-status-good, var(--cf-border));
+}
+
+.mw-risk--bad {
+  border-left-color: var(--cf-status-crit, var(--cf-border));
+}
+
+/* Neither good nor bad: nobody has looked. It must not read as either. */
+.mw-risk--unknown {
+  border-left-color: var(--cf-border);
+  color: var(--cf-fg-dim);
+}
+
+@media (max-width: 40rem) {
+  .mw-risk {
+    grid-template-columns: 1.5rem 1fr;
+  }
+
+  .mw-risk__text {
+    grid-column: 2;
+  }
+}
+
+/* ------------------------------ prose ------------------------------ */
+
+/*
+ * Text written by whoever launched the token. `white-space: pre-wrap` so their line breaks
+ * survive; the value is rendered as a text node by React, never as HTML.
+ */
+.mw-prose {
+  margin: var(--cf-space-3) 0 0;
+  max-width: 68ch;
+  white-space: pre-wrap;
+}
+
+/* ------------------------------ forms ------------------------------ */
+
+.mw-form {
+  max-width: 46rem;
+}
+
+.mw-fieldset {
+  margin: 0 0 var(--cf-space-5);
+  padding: var(--cf-space-4);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-surface);
+}
+
+.mw-fieldset legend {
+  padding: 0 var(--cf-space-2);
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mw-fieldset__note {
+  margin: 0 0 var(--cf-space-3);
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+}
+
+.mw-field {
+  display: block;
+  margin: 0 0 var(--cf-space-4);
+}
+
+.mw-field__label {
+  display: block;
+  margin: 0 0 var(--cf-space-1);
+  font-size: var(--cf-text-sm);
+}
+
+.mw-input {
+  width: 100%;
+  padding: var(--cf-space-2);
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  font: inherit;
+}
+
+.mw-input--area {
+  resize: vertical;
+  font-family: var(--cf-font-sans);
+}
+
+.mw-field__hint,
+.mw-field__preview {
+  display: block;
+  margin: var(--cf-space-1) 0 0;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-xs);
+}
+
+.mw-field__hint--warn {
+  color: var(--cf-fg);
+}
+
+/* A problem is a sentence, never a red outline on its own. */
+.mw-field__problem {
+  display: block;
+  margin: var(--cf-space-1) 0 0;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-status-crit, var(--cf-fg));
+}
+
+.mw-choices {
+  display: grid;
+  gap: var(--cf-space-2);
+}
+
+.mw-choice {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: 'radio title' 'radio note';
+  gap: 0 var(--cf-space-2);
+  padding: var(--cf-space-3);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  cursor: pointer;
+}
+
+.mw-choice input {
+  grid-area: radio;
+  align-self: center;
+}
+
+.mw-choice__title {
+  grid-area: title;
+}
+
+.mw-choice__note {
+  grid-area: note;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-xs);
+}
+
+/* Selection is a border AND the radio itself, never colour alone. */
+.mw-choice.is-selected {
+  border-color: var(--cf-accent);
+  border-left-width: 3px;
+}
+
+.mw-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cf-space-3);
+  flex-wrap: wrap;
+  margin: var(--cf-space-4) 0 0;
+}
+
+.mw-actions__note {
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-xs);
+  max-width: 44ch;
+}
+
+.mw-inline-btn {
+  font-size: var(--cf-text-xs);
+}
+
+/* ------------------------------ tables ----------------------------- */
+
+.mw-tablewrap {
+  overflow-x: auto;
+}
+
+.mw-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--cf-text-sm);
+}
+
+.mw-table__caption {
+  caption-side: bottom;
+  margin-top: var(--cf-space-2);
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-xs);
+  text-align: left;
+}
+
+.mw-table th,
+.mw-table td {
+  padding: var(--cf-space-2);
+  border-bottom: 1px solid var(--cf-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.mw-table thead th {
+  color: var(--cf-fg-dim);
+  font-weight: 500;
+  font-size: var(--cf-text-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mw-table__link {
+  color: inherit;
+}
+
+.mw-table__name {
+  font-weight: 600;
+}
+
+.mw-table__symbol {
+  color: var(--cf-fg-dim);
+}
+
+.mw-table__sub {
+  display: block;
+  margin-top: var(--cf-space-1);
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-xs);
+}
