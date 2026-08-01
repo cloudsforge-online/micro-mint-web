@@ -1,9 +1,9 @@
 /**
- * The public project page. `GET /v1/tokens/:id/page` — `mint/src/server.ts:572`.
+ * The public project page. `GET /v1/tokens/:id/page` — `mint/src/server.ts:596`.
  *
  * **No `authenticate()` call.** Fetched with `auth: false` and rendered to anybody with the
  * address, because "a project page nobody can read without an account is a project page that
- * cannot do the one job it has" (`mint/src/server.ts:569-570`).
+ * cannot do the one job it has" (`mint/src/server.ts:593-594`).
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * THE INVARIANT THIS SCREEN EXISTS TO KEEP — 04-domain-model §5.3, implemented at

@@ -132,7 +132,7 @@ jobs:
             echo "::error::the route cross-check skipped itself while micro-mint was present"
             exit 1
           fi
-          printf '%s\n' "$out" | grep -q 'is registered at mint/src/server.ts:340' || {
+          printf '%s\n' "$out" | grep -q 'is registered at mint/src/server.ts:354' || {
             echo "::error::the route cross-check did not run against mint/src/server.ts"
             exit 1
           }
@@ -258,7 +258,7 @@ jobs:
 
       - name: No act-as-anyone parameter
         # `GET /v1/tokens` honours a `userId` query parameter for an admin principal
-        # (mint/src/server.ts:420-421). From a customer bundle it can only ever be the caller's own
+        # (mint/src/server.ts:444-445). From a customer bundle it can only ever be the caller's own
         # id or a 403, so exposing it would put an act-as-anyone-shaped control in a product app for
         # no reachable behaviour. deploy/gateway/dynamic/policy.yml refuses the /internal routes
         # that took a userId as a parameter for the same reason.

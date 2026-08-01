@@ -1,23 +1,23 @@
 /**
- * The order form. `POST /v1/tokens` — `mint/src/server.ts:359`.
+ * The order form. `POST /v1/tokens` — `mint/src/server.ts:373`.
  *
  * It opens an order and does nothing else: "Nothing is charged and nothing is deployed"
- * (`mint/src/server.ts:358`). The screen says so above the button, because a form that takes a
+ * (`mint/src/server.ts:372`). The screen says so above the button, because a form that takes a
  * wallet id and an owner address looks exactly like one that is about to spend money.
  *
- * ── Three things this form refuses that the service accepts, and why ──────────────────────────
+ * ── Nothing here is stricter than the service any more ────────────────────────────────────────
  *
- * Every other rule here mirrors one the service enforces (see src/lib/launch.ts, which carries the
- * citation for each). The cap rules do not, and that is deliberate:
+ * Every rule this form applies mirrors one the service enforces (see src/lib/launch.ts, which
+ * carries the citation for each). The cap rules used to be the exception: `POST /v1/tokens`
+ * validated the FEATURE SET and never read the cap, so a pausable order with no cap was accepted,
+ * payable, and then unbuildable. Mint refuses it at the order route now — `assertBuildable`
+ * (`mint/src/catalogue.ts:179`, called at `mint/src/server.ts:412`) answers 400 `unbuildable_order`
+ * naming the field (`mint/src/server.ts:299`).
  *
- * `POST /v1/tokens` validates the FEATURE SET (`variantFor`, `server.ts:383`) and never looks at
- * the cap. The cap is first checked by `constructorArgs` (`mint/src/catalogue.ts:113-119`), which
- * runs inside the deploy job (`mint/src/families.ts:326`). So ordering a pausable token with no
- * cap is accepted, payable, and then fails terminally at deploy — and `failed` is not claimable
- * (`mint/src/tokens.ts:68-73`), so there is no retry. The customer has paid for something that
- * cannot be built.
- *
- * Refusing it here costs nothing a customer wanted and is reported upstream as the real fix.
+ * The cap check stays here for the reason every other mirror does: the customer reads the message
+ * beside the input instead of after a round trip. It is no longer the only copy, which means it is
+ * now capable of disagreeing with the service — so the rule that no check here may be STRICTER
+ * than mint is load-bearing rather than theoretical.
  *
  * ── The supply unit ───────────────────────────────────────────────────────────────────────────
  *
@@ -161,7 +161,7 @@ export function LaunchPage() {
               ))}
             </select>
             {/*
-              The mainnet allowlist is checked at DEPLOY, not here: `server.ts:509-518` refuses a
+              The mainnet allowlist is checked at DEPLOY, not here: `server.ts:533-542` refuses a
               mainnet deploy from a subject that is not allowlisted, after the order is paid.
               Saying so beside the choice is the only place a customer can act on it.
             */}

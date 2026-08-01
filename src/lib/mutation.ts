@@ -9,13 +9,13 @@
  *
  * The two writes this app makes both spend or commit something that cannot be taken back:
  * `POST /v1/tokens/:id/pay` debits a customer's Shards through the ledger in one transaction
- * (`mint/src/server.ts:454-483`), and `POST /v1/tokens/:id/deploy` queues a job that puts a
- * contract on a chain (`mint/src/server.ts:491-544`).
+ * (`mint/src/server.ts:478-507`), and `POST /v1/tokens/:id/deploy` queues a job that puts a
+ * contract on a chain (`mint/src/server.ts:515-568`).
  *
  * Neither takes an `Idempotency-Key` — mint has none — so the safety net is the service's own
  * state machine: `payForDeploy` updates `where status = 'awaiting_payment'` and answers 200 with
  * `replayed: true` if it finds the work done (`mint/src/tokens.ts:326-332`), and `deploy` enqueues
- * with `onConflict: 'keep'` so three clicks produce one run (`mint/src/server.ts:523-528`). Those
+ * with `onConflict: 'keep'` so three clicks produce one run (`mint/src/server.ts:547-552`). Those
  * make a double click survivable; they are not a reason to cause one. So the hook refuses to start
  * a second run while one is in flight, and the buttons read the same flag so they are DISABLED
  * rather than merely ignored.

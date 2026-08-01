@@ -55,7 +55,7 @@ describe('the nested shape identity answers', () => {
   })
 
   it('prefixes the principal with `user:`, which is how mint spells an owner subject', () => {
-    // `userSubject(userId)` — mint/src/server.ts:393 — and `ownerSubject` on every row.
+    // `userSubject(userId)` — mint/src/server.ts:417 — and `ownerSubject` on every row.
     assert.match(readCustomer(NESTED).principal ?? '', /^user:/)
   })
 })

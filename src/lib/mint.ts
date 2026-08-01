@@ -12,20 +12,20 @@
  * with no `authenticate()` call and then had to explain a 403 that was never about authorisation.
  *
  * `mint` registers its routes through one `define(method, path, handler)` list
- * (`mint/src/server.ts:306-578`), so the surface is enumerable and the citations are stable.
+ * (`mint/src/server.ts:320-602`), so the surface is enumerable and the citations are stable.
  *
  * | Method | Path                    | Authenticates | Verified at              |
  * | ------ | ----------------------- | ------------- | ------------------------ |
- * | GET    | /v1/catalogue           | **no**        | mint/src/server.ts:340   |
- * | POST   | /v1/tokens              | yes           | mint/src/server.ts:359   |
- * | GET    | /v1/tokens              | yes           | mint/src/server.ts:417   |
- * | GET    | /v1/tokens/:id          | yes           | mint/src/server.ts:430   |
- * | POST   | /v1/tokens/:id/pay      | yes           | mint/src/server.ts:454   |
- * | POST   | /v1/tokens/:id/deploy   | yes           | mint/src/server.ts:491   |
- * | PUT    | /v1/tokens/:id/page     | yes           | mint/src/server.ts:546   |
- * | GET    | /v1/tokens/:id/page     | **no**        | mint/src/server.ts:572   |
+ * | GET    | /v1/catalogue           | **no**        | mint/src/server.ts:354   |
+ * | POST   | /v1/tokens              | yes           | mint/src/server.ts:373   |
+ * | GET    | /v1/tokens              | yes           | mint/src/server.ts:441   |
+ * | GET    | /v1/tokens/:id          | yes           | mint/src/server.ts:454   |
+ * | POST   | /v1/tokens/:id/pay      | yes           | mint/src/server.ts:478   |
+ * | POST   | /v1/tokens/:id/deploy   | yes           | mint/src/server.ts:515   |
+ * | PUT    | /v1/tokens/:id/page     | yes           | mint/src/server.ts:570   |
+ * | GET    | /v1/tokens/:id/page     | **no**        | mint/src/server.ts:596   |
  *
- * The service serves `/livez`, `/readyz` and `/metrics` as well (`server.ts:314`, `316`, `324`).
+ * The service serves `/livez`, `/readyz` and `/metrics` as well (`server.ts:328`, `:330`, `:338`).
  * They are not called from a browser and are not wrapped here.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  *
@@ -36,8 +36,8 @@
  * header read anywhere in `mint/src/server.ts`. Mint gets the same protection from STATE instead —
  * `payForDeploy` runs one conditional UPDATE guarded by `and status = 'awaiting_payment'`
  * (`mint/src/tokens.ts:326-332`) and answers 200 with `replayed: true` when it finds the work
- * already done (`mint/src/server.ts:474-479`), and `deploy` enqueues with `onConflict: 'keep'`
- * (`mint/src/server.ts:523-528`) so three clicks before the first job runs produce one run.
+ * already done (`mint/src/server.ts:498-503`), and `deploy` enqueues with `onConflict: 'keep'`
+ * (`mint/src/server.ts:547-552`) so three clicks before the first job runs produce one run.
  *
  * So this client sends no such header. Sending one would be harmless and would also be this app
  * asserting something about the service that is not true.
@@ -85,7 +85,7 @@ export type Feature = (typeof FEATURES)[number]
 /** `mint/src/catalogue.ts:28`. */
 export type Variant = 'fixed' | 'mintable' | 'foundry'
 
-/** `mint/src/chains.ts`, as the order form offers them (`mint/src/server.ts:366`). */
+/** `mint/src/chains.ts`, as the order form offers them (`mint/src/server.ts:380`). */
 export const CHAINS = ['ember', 'eth', 'sol'] as const
 export type ChainId = (typeof CHAINS)[number]
 
@@ -93,10 +93,10 @@ export const NETWORKS = ['mainnet', 'testnet'] as const
 export type Network = (typeof NETWORKS)[number]
 
 /**
- * One order, as `toWire` puts it on the wire (`mint/src/server.ts:617-645`).
+ * One order, as `toWire` puts it on the wire (`mint/src/server.ts:641-669`).
  *
  * `supply`, `cap` and `priceShards` are STRINGS. The service says why in one line at
- * `server.ts:628`: "A supply of 10^24 is an ordinary token and does not survive a JSON number."
+ * `server.ts:652`: "A supply of 10^24 is an ordinary token and does not survive a JSON number."
  * Nothing in this bundle parses any of them with `Number`; they are `bigint` or text, everywhere.
  */
 export interface TokenOrder {
@@ -126,7 +126,7 @@ export interface TokenOrder {
   readonly updatedAt: string
 }
 
-/** `mint/src/tokens.ts:670-677`, as rendered at `mint/src/server.ts:441-448`. */
+/** `mint/src/tokens.ts:670-677`, as rendered at `mint/src/server.ts:465-472`. */
 export type AttemptOutcome =
   | 'signed'
   | 'broadcast'
@@ -145,7 +145,7 @@ export interface DeployAttempt {
   readonly at: string
 }
 
-/** `mint/src/server.ts:340-356`. */
+/** `mint/src/server.ts:354-370`. */
 export interface Catalogue {
   readonly priceShards: string
   readonly network: string
@@ -219,7 +219,7 @@ export interface RenderedPage {
 /* ══════════════════════════════ the calls ══════════════════════════════ */
 
 /**
- * `GET /v1/catalogue` — `mint/src/server.ts:340`.
+ * `GET /v1/catalogue` — `mint/src/server.ts:354`.
  *
  * **Makes no `authenticate()` call**: the handler is a literal body with no principal in it, and
  * the comment above it says why ("a catalogue behind a token cannot be browsed"). So this is sent
@@ -230,19 +230,19 @@ export function getCatalogue(signal?: AbortSignal): Promise<Catalogue> {
   return api<Catalogue>('/v1/catalogue', { auth: false, ...(signal ? { signal } : {}) })
 }
 
-/** `POST /v1/tokens` — `mint/src/server.ts:359`. Opens an order; charges nothing, deploys nothing. */
+/** `POST /v1/tokens` — `mint/src/server.ts:373`. Opens an order; charges nothing, deploys nothing. */
 export interface CreateOrderInput {
   readonly chain: ChainId
-  /** Optional: the service falls back to its own configured network (`server.ts:367`). */
+  /** Optional: the service falls back to its own configured network (`server.ts:381`). */
   readonly network?: Network
   readonly name: string
   readonly symbol: string
   readonly decimals: number
-  /** A positive decimal string, smallest units. `requireQuantity`, `mint/src/server.ts:689-695`. */
+  /** A positive decimal string, smallest units. `requireQuantity`, `mint/src/server.ts:713-719`. */
   readonly supply: string
   readonly cap?: string | null
   readonly features: readonly Feature[]
-  /** EIP-55 checksummed and never the zero address — `canonicaliseEvm`, `mint/src/server.ts:387`. */
+  /** EIP-55 checksummed and never the zero address — `canonicaliseEvm`, `mint/src/server.ts:397`. */
   readonly ownerAddress: string
   readonly ownerWalletId: string
   readonly metadataUri?: string | null
@@ -258,9 +258,9 @@ export function createOrder(input: CreateOrderInput, signal?: AbortSignal): Prom
 }
 
 /**
- * `GET /v1/tokens` — `mint/src/server.ts:417`.
+ * `GET /v1/tokens` — `mint/src/server.ts:441`.
  *
- * The `userId` query parameter is deliberately NOT exposed. `server.ts:420-421` honours it only
+ * The `userId` query parameter is deliberately NOT exposed. `server.ts:444-445` honours it only
  * for an admin principal and otherwise passes it through `subjectUserId`, which refuses a mismatch
  * — so from this bundle it can only ever be the caller's own id or a 403. Offering it would put an
  * act-as-anyone-shaped control in a customer app for no reachable behaviour.
@@ -270,12 +270,12 @@ export function listOrders(signal?: AbortSignal): Promise<{ tokens: readonly Tok
 }
 
 /**
- * `GET /v1/tokens/:id` — `mint/src/server.ts:430`.
+ * `GET /v1/tokens/:id` — `mint/src/server.ts:454`.
  *
- * The status URL a 202 points at. It reaches no chain (`server.ts:426-429`), so polling it cannot
+ * The status URL a 202 points at. It reaches no chain (`server.ts:450-453`), so polling it cannot
  * make a deploy slower — which is what makes the status screen's refresh honest rather than rude.
  * A malformed or foreign id is a **404**, not a 403: `ownedToken` answers both the same way on
- * purpose (`server.ts:598-603`), so that a caller cannot enumerate order ids.
+ * purpose (`server.ts:622-627`), so that a caller cannot enumerate order ids.
  */
 export function getOrder(
   id: string,
@@ -288,14 +288,14 @@ export function getOrder(
 }
 
 /**
- * `POST /v1/tokens/:id/pay` — `mint/src/server.ts:454`.
+ * `POST /v1/tokens/:id/pay` — `mint/src/server.ts:478`.
  *
  * One transaction: the ledger entry and the state change together. **201 on a fresh debit, 200 on
  * a replay**, and the body carries `replayed` so a client can tell which without comparing bodies
- * (`server.ts:474-479`). This app renders the difference rather than hiding it: "already paid" and
+ * (`server.ts:498-503`). This app renders the difference rather than hiding it: "already paid" and
  * "just paid" are different facts about the customer's money.
  *
- * 402 `insufficient_balance` is its own answer (`server.ts:277-280`) and is not a retryable error.
+ * 402 `insufficient_balance` is its own answer (`server.ts:283-286`) and is not a retryable error.
  */
 export function payForOrder(id: string): Promise<{ token: TokenOrder; replayed: boolean }> {
   return api<{ token: TokenOrder; replayed: boolean }>(
@@ -305,11 +305,11 @@ export function payForOrder(id: string): Promise<{ token: TokenOrder; replayed: 
 }
 
 /**
- * `POST /v1/tokens/:id/deploy` — `mint/src/server.ts:491`.
+ * `POST /v1/tokens/:id/deploy` — `mint/src/server.ts:515`.
  *
  * **202 AND A STATUS URL. IT REACHES NO CHAIN.** The handler authenticates, checks the mainnet
  * allowlist, runs one conditional UPDATE, enqueues, and returns a `Location`
- * (`mint/src/server.ts:485-544`; the file header at `server.ts:8-23` explains at length why the
+ * (`mint/src/server.ts:509-568`; the file header at `server.ts:8-23` explains at length why the
  * work cannot live inside the request). So this client must never treat the response as "deployed"
  * — it means "accepted", and the screen says exactly that.
  */
@@ -317,7 +317,7 @@ export interface DeployAccepted {
   readonly accepted: boolean
   readonly tokenId: string
   readonly status: TokenStatus
-  /** Named in the BODY as well as the header — `mint/src/server.ts:539-541`. */
+  /** Named in the BODY as well as the header — `mint/src/server.ts:563-565`. */
   readonly statusUrl: string
 }
 
@@ -326,10 +326,10 @@ export function deployOrder(id: string): Promise<DeployAccepted> {
 }
 
 /**
- * `PUT /v1/tokens/:id/page` — `mint/src/server.ts:546`.
+ * `PUT /v1/tokens/:id/page` — `mint/src/server.ts:570`.
  *
  * Every field is coerced by the handler rather than required: a missing `description` becomes `''`
- * and a non-array `links` becomes `[]` (`server.ts:550-560`). So the client sends the whole
+ * and a non-array `links` becomes `[]` (`server.ts:574-584`). So the client sends the whole
  * document every time — this is a PUT, and sending a partial one would silently blank the fields
  * it left out.
  */
@@ -350,10 +350,10 @@ export function putProjectPage(id: string, input: ProjectPageInput): Promise<{ p
 }
 
 /**
- * `GET /v1/tokens/:id/page` — `mint/src/server.ts:572`.
+ * `GET /v1/tokens/:id/page` — `mint/src/server.ts:596`.
  *
  * **Makes no `authenticate()` call**, deliberately: "a project page nobody can read without an
- * account is a project page that cannot do the one job it has" (`server.ts:569-570`). Sent with
+ * account is a project page that cannot do the one job it has" (`server.ts:593-594`). Sent with
  * `auth: false` for the same reason as the catalogue.
  */
 export function getProjectPage(id: string, signal?: AbortSignal): Promise<RenderedPage> {

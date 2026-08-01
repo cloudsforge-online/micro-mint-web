@@ -5,9 +5,9 @@ polls while a deploy runs, and the public project page a prospective buyer reads
 bundle served by nginx and nothing else — no server, no session store, no database.
 
 > **This bundle enforces nothing, and none of its refusals are a boundary.** `mint` verifies the
-> bearer on every route that needs one (`authenticate`, `mint/src/server.ts:647`), and `ownedToken`
+> bearer on every route that needs one (`authenticate`, `mint/src/server.ts:671`), and `ownedToken`
 > answers **404** for another customer's order — the same answer as "no such order", deliberately,
-> so that order ids cannot be enumerated (`mint/src/server.ts:598-603`). What this app contributes
+> so that order ids cannot be enumerated (`mint/src/server.ts:625-626`). What this app contributes
 > is that a screen offers what the service will actually accept, and says why when it will not.
 >
 > It also **stores no environment**. There is no `.env`, no `define`, no `envPrefix` and no
@@ -24,14 +24,14 @@ registered at the line cited here, and CI fails if that cross-check did not run.
 
 | Method | Path | Authenticates | Idempotency-Key | What it does | Verified at |
 | --- | --- | --- | --- | --- | --- |
-| `GET` | `/v1/catalogue` | **no** | — | the three contracts and the Shards price | `mint/src/server.ts:340` |
-| `POST` | `/v1/tokens` | yes | — | opens an order; charges nothing, deploys nothing | `mint/src/server.ts:359` |
-| `GET` | `/v1/tokens` | yes | — | the caller's launches, newest first, at most 100 | `mint/src/server.ts:417` |
-| `GET` | `/v1/tokens/:id` | yes | — | one order and every deploy attempt | `mint/src/server.ts:430` |
-| `POST` | `/v1/tokens/:id/pay` | yes | — | debits Shards; **201** fresh, **200** replayed | `mint/src/server.ts:454` |
-| `POST` | `/v1/tokens/:id/deploy` | yes | — | **202 and a status URL. Reaches no chain.** | `mint/src/server.ts:491` |
-| `PUT` | `/v1/tokens/:id/page` | yes | — | replaces the whole project-page document | `mint/src/server.ts:546` |
-| `GET` | `/v1/tokens/:id/page` | **no** | — | the public project page, chain facts included | `mint/src/server.ts:572` |
+| `GET` | `/v1/catalogue` | **no** | — | the three contracts and the Shards price | `mint/src/server.ts:354` |
+| `POST` | `/v1/tokens` | yes | — | opens an order; charges nothing, deploys nothing | `mint/src/server.ts:373` |
+| `GET` | `/v1/tokens` | yes | — | the caller's launches, newest first, at most 100 | `mint/src/server.ts:441` |
+| `GET` | `/v1/tokens/:id` | yes | — | one order and every deploy attempt | `mint/src/server.ts:454` |
+| `POST` | `/v1/tokens/:id/pay` | yes | — | debits Shards; **201** fresh, **200** replayed | `mint/src/server.ts:478` |
+| `POST` | `/v1/tokens/:id/deploy` | yes | — | **202 and a status URL. Reaches no chain.** | `mint/src/server.ts:515` |
+| `PUT` | `/v1/tokens/:id/page` | yes | — | replaces the whole project-page document | `mint/src/server.ts:570` |
+| `GET` | `/v1/tokens/:id/page` | **no** | — | the public project page, chain facts included | `mint/src/server.ts:596` |
 
 **Two of them make no `authenticate()` call**, and this client sends no bearer to either
 (`auth: false` in `src/lib/mint.ts`). That is not a nicety: the estate has already shipped a client
@@ -43,7 +43,7 @@ service's own handler bodies, in `test/mint.test.ts`.
 header read anywhere in the service — unlike four wallet routes and five market mutations, which
 answer 400 without one. Mint gets the same protection from state: `pay` runs one conditional UPDATE
 guarded by `and status = 'awaiting_payment'` (`mint/src/tokens.ts:326-332`) and `deploy` enqueues
-with `onConflict: 'keep'` (`mint/src/server.ts:523-528`). `test/mint.test.ts` asserts the absence, so
+with `onConflict: 'keep'` (`mint/src/server.ts:547-552`). `test/mint.test.ts` asserts the absence, so
 nobody "fixes" this client by adding a header the service ignores.
 
 ### The 202 is the most important thing on this list
@@ -84,18 +84,22 @@ project page somebody was *sent*.
 
 ## What it refuses that the service accepts, and why
 
-One thing, and it is deliberate.
+**Nothing any more.** This section used to name one deliberate divergence, and it is closed.
 
-`POST /v1/tokens` validates the FEATURE SET (`variantFor`, `mint/src/server.ts:383`) and never looks
-at the cap. The cap is first checked by `constructorArgs` (`mint/src/catalogue.ts:113-119`), which
-runs from `mint/src/families.ts:326` — **inside the deploy job**. So ordering a pausable token with
-no cap is accepted, payable, and then fails terminally at deploy; and `failed` is terminal
-(`mint/src/tokens.ts:52`) and deliberately excluded from `CLAIMABLE` (`mint/src/tokens.ts:68-73`),
-so there is no retry. The customer has paid for a token that cannot be built.
+`POST /v1/tokens` validated the FEATURE SET (`variantFor`) and never looked at the cap; the cap was
+first checked by `constructorArgs`, inside the deploy job, after payment. So ordering a pausable
+token with no cap was accepted, payable, and then unbuildable. Mint now refuses it at the order
+route: `assertBuildable` (`mint/src/catalogue.ts:179`, called at `mint/src/server.ts:412`) runs the
+deploy path's own `variantFor` and `constructorArgs` against the request and answers **400
+`unbuildable_order`** with the offending `field` in the error body (`mint/src/server.ts:299`).
 
-`src/lib/launch.ts` refuses the combination at order time. It costs nothing anybody wanted, and
-`test/launch.test.ts` walks every variant in both directions. **The real fix is in mint, at the
-order route** — reported, not worked around, and this guard comes out the day it lands.
+So `src/lib/launch.ts`'s cap check is now an ordinary mirror, kept for the same reason as every
+other rule in that file — the customer sees the message next to the input instead of after a round
+trip. It is **not** removed with the divergence: deleting it would make a foundry order with no cap
+a server round trip and a red error banner rather than a disabled button, which is a worse form for
+no gain. `test/launch.test.ts` walks every variant in both directions, and the standing rule that no
+check here may be *stricter* than the service now bites where it did not before — the two are
+genuinely independent copies again.
 
 Everything else in that file is a mirror of a rule the service already enforces, each with the line
 it mirrors, and the tests assert that none of them is *stricter* than the service: a client that
@@ -205,14 +209,12 @@ page.
 
 ## Known gaps
 
-- **The cap is not validated at order time by mint.** Described above. Guarded here; the real fix is
-  in `mint`. Reported.
-- **`GET /v1/tokens` takes no cursor** and returns at most 100 rows (`mint/src/server.ts:422`), so
+- **`GET /v1/tokens` takes no cursor** and returns at most 100 rows (`mint/src/server.ts:446`), so
   older launches cannot be listed. The list says so when it is full rather than stopping silently at
   a round number.
 - **The project-page editor edits two of six fields.** `links`, `team` and `roadmap` are structured
   entries; the form sends `[]` for them, which is what the handler stores for an absent value anyway
-  (`mint/src/server.ts:555-557`), and the panel says the save replaces the whole document. A partial
+  (`mint/src/server.ts:578-581`), and the panel says the save replaces the whole document. A partial
   PUT would silently blank them, which is why they are sent explicitly rather than omitted.
 - **`verificationStatus` is displayed and not actionable.** Claiming or verifying a project is
   market's surface, not this one.

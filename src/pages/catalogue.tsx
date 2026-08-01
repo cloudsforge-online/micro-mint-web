@@ -1,7 +1,7 @@
 /**
  * What Forge Create can deploy, and what it costs.
  *
- * `GET /v1/catalogue` — `mint/src/server.ts:340`. **No `authenticate()` call**, so this screen is
+ * `GET /v1/catalogue` — `mint/src/server.ts:354`. **No `authenticate()` call**, so this screen is
  * fetched with `auth: false` and rendered to a signed-out visitor. That is not a convenience: the
  * handler's own comment says "a catalogue behind a token cannot be browsed", and a product whose
  * front page demands a session cannot answer the question people arrive with.
@@ -72,7 +72,7 @@ export function CataloguePage() {
             </p>
             <p className="mw-panel__note">
               Charged once, when you pay for an order. Opening an order charges nothing
-              (<code className="cf-num">POST /v1/tokens</code>, mint/src/server.ts:358).
+              (<code className="cf-num">POST /v1/tokens</code>, mint/src/server.ts:372).
               {/* The service's default network, which the order form pre-selects. Rendered because
                   a catalogue that does not say which network it priced is describing two
                   different products at one price. */}{' '}
@@ -131,7 +131,7 @@ export function CataloguePage() {
               {CHAINS.map(chainName).join(', ')}. A deploy is accepted immediately and runs as a
               job: the response is a <code className="cf-num">202</code> and a status address, never
               a contract. Nothing in a launch request reaches a chain
-              (mint/src/server.ts:485-490).
+              (mint/src/server.ts:509-514).
             </p>
           </section>
 

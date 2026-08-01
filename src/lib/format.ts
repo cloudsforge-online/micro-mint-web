@@ -126,7 +126,7 @@ export function statusTone(status: TokenStatus): Tone {
       // `mint/src/tokens.ts:52` makes this TERMINAL, and `CLAIMABLE` (`tokens.ts:68-73`) leaves it
       // out deliberately — re-claiming a failed row immediately is what makes a double mint
       // reachable. Saying "will not retry automatically" is the service's own wording
-      // (`mint/src/server.ts:500`), and it is the honest thing to put in front of a customer.
+      // (`mint/src/server.ts:524`), and it is the honest thing to put in front of a customer.
       return {
         tone: 'crit',
         glyph: '■',
@@ -235,7 +235,7 @@ export function shortId(id: string): string {
 /**
  * A Shards price, as text.
  *
- * `priceShards` arrives as a decimal STRING (`mint/src/server.ts:633`) and stays one. Shards are
+ * `priceShards` arrives as a decimal STRING (`mint/src/server.ts:657`) and stays one. Shards are
  * a whole-unit currency in this estate, so there is no scaling to do here — but the value is never
  * put through `Number`, because the point of the string is that some of these do not survive it.
  */

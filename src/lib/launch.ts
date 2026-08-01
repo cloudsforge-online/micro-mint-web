@@ -3,47 +3,49 @@
  *
  * Every rule below is one the SERVICE already enforces, restated here so the customer is told
  * before they submit rather than after. Client-side validation is never the boundary — mint
- * refuses the same things at `mint/src/server.ts:359-415` and would refuse them if this file were
+ * refuses the same things at `mint/src/server.ts:373-439` and would refuse them if this file were
  * deleted — so each check carries the line it mirrors, and none of them is stricter than the
  * service. A client that refuses something the service accepts is a client that has quietly
  * removed a feature.
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
- * ONE OF THEM IS NOT A MIRROR, AND IT IS THE MOST IMPORTANT FUNCTION IN THIS FILE.
+ * `capRuleFor` USED TO BE THE ONLY THING ENFORCING THE CAP RULE ANYWHERE. IT IS NOT ANY MORE.
  *
- * `capRuleFor` enforces the variant's cap rule AT ORDER TIME. The service does not:
- * `POST /v1/tokens` reads the cap (`server.ts:378`) and calls `variantFor(features)`
- * (`server.ts:383`) — which validates the FEATURE SET and nothing else. The cap is first checked
- * by `constructorArgs`, which throws "FoundryToken requires a cap" / "takes no cap"
- * (`mint/src/catalogue.ts:113-119`), and `constructorArgs` is reached only from `families.ts:326`
- * — inside the deploy job.
+ * What this comment said until the service was fixed: `POST /v1/tokens` called
+ * `variantFor(features)` and nothing else, so it validated the FEATURE SET and never read the cap.
+ * The cap was first checked by `constructorArgs`, inside the deploy job — after payment. A
+ * customer could order a pausable token with no cap, **pay**, and then hold an order that could
+ * never be built.
  *
- * So the sequence a customer can actually walk today is: order a pausable token with no cap →
- * **pay** → deploy → the job throws → the launch lands in `failed`, which
- * `mint/src/tokens.ts:52` makes TERMINAL and `CLAIMABLE` deliberately excludes from retry. They
- * have paid for a token that cannot be deployed and cannot be retried.
+ * Mint now refuses that at the order route: `assertBuildable`
+ * (`mint/src/catalogue.ts:179`, called at `mint/src/server.ts:412`) runs the deploy path's own
+ * `variantFor` and `constructorArgs` against the request and answers **400 `unbuildable_order`**
+ * with the offending `field` (`mint/src/server.ts:299`). The cap rule below is therefore an
+ * ordinary mirror like every other rule in this file — it exists so the customer sees the message
+ * next to the input rather than after a round trip, not because it is the only copy.
  *
- * The right fix is in mint, at the order route, and it is reported. Until it lands this form
- * refuses to submit the combination, and `test/launch.test.ts` walks every variant in both
- * directions so the guard cannot rot into a comment.
+ * **It is still not allowed to be stricter than the service**, and that matters more now than it
+ * did when it was the only guard: the two now genuinely can disagree. `test/launch.test.ts` walks
+ * every variant in both directions, and the messages here must stay reachable — a combination this
+ * file refuses and mint accepts is a feature this client has quietly removed.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 import type { Feature, Variant } from './mint.ts'
 
 /* ══════════════════════════════ the field rules ══════════════════════════════ */
 
-/** `mint/src/server.ts:134` — `MAX_NAME = 64`. */
+/** `mint/src/server.ts:140` — `MAX_NAME = 64`. */
 export const MAX_NAME = 64
 
-/** `mint/src/server.ts:135` — `MAX_SYMBOL = 12`, and the pattern at `server.ts:373`. */
+/** `mint/src/server.ts:141` — `MAX_SYMBOL = 12`, and the pattern at `server.ts:387`. */
 export const SYMBOL_PATTERN = /^[A-Z0-9]{2,12}$/
 
-/** `requireInteger(body, 'decimals', 0, 18)` — `mint/src/server.ts:376`. */
+/** `requireInteger(body, 'decimals', 0, 18)` — `mint/src/server.ts:390`. */
 export const MIN_DECIMALS = 0
 export const MAX_DECIMALS = 18
 
 /**
- * `requireQuantity` — `mint/src/server.ts:689-695`.
+ * `requireQuantity` — `mint/src/server.ts:713-719`.
  *
  * Positive, no leading zero, at most 78 digits. Note what it is NOT: it is not a human amount.
  * See `smallestUnitWarning`.
@@ -61,7 +63,7 @@ export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 /**
  * The variant a feature set deploys, or null when no committed contract provides exactly it.
  *
- * A faithful re-implementation of `variantFor` (`mint/src/catalogue.ts:80-90`), and faithful
+ * A faithful re-implementation of `variantFor` (`mint/src/catalogue.ts:98-111`), and faithful
  * specifically in refusing a SUPERSET. `pausable` alone matches nothing: the only contract that
  * pauses also mints and burns, and giving a customer an owner key that can freeze every holder's
  * balance because it was the nearest fit is worse than refusing.
@@ -74,7 +76,7 @@ export function variantFor(features: readonly Feature[]): Variant | null {
   return null
 }
 
-/** `mint/src/catalogue.ts:39-63` — `cap` is `'required'` or `'forbidden'`, never optional. */
+/** `mint/src/catalogue.ts:39-64` — `cap` is `'required'` or `'forbidden'`, never optional. */
 export function capRuleFor(variant: Variant): 'required' | 'forbidden' {
   return variant === 'foundry' ? 'required' : 'forbidden'
 }
@@ -128,7 +130,7 @@ export function problemsWith(draft: LaunchDraft): readonly FieldProblem[] {
   if (draft.name.trim().length === 0) {
     bad('name', 'A token needs a name.')
   } else if (draft.name.length > MAX_NAME) {
-    // Mirrors `mint/src/server.ts:371`, which counts the raw string rather than the trimmed one.
+    // Mirrors `mint/src/server.ts:385`, which counts the raw string rather than the trimmed one.
     bad('name', `At most ${MAX_NAME} characters; this is ${draft.name.length}.`)
   }
 
@@ -172,7 +174,7 @@ export function problemsWith(draft: LaunchDraft): readonly FieldProblem[] {
       QUANTITY_PATTERN.test(draft.supply) &&
       BigInt(draft.cap) < BigInt(draft.supply)
     ) {
-      // `constructorArgs` throws 'cap must be at least the initial supply' — catalogue.ts:117.
+      // `constructorArgs` throws 'cap must be at least the initial supply' — catalogue.ts:142-144.
       bad('cap', 'The cap cannot be below the initial supply.')
     }
   }
@@ -201,7 +203,7 @@ export function isSubmittable(draft: LaunchDraft): boolean {
  *
  * `supply` goes to the contract constructor UNSCALED: `_mint(recipient_, initialSupply_)` in
  * every one of the three contracts (`mint/src/contracts/ForgeTokens.sol:38`, `:58`, `:83`), from
- * `constructorArgs` (`mint/src/catalogue.ts:110`). `decimals` is a separate constructor argument
+ * `constructorArgs` (`mint/src/catalogue.ts:131`). `decimals` is a separate constructor argument
  * that only changes how a wallet DISPLAYS the balance.
  *
  * So "1000000" with 18 decimals is not a million tokens. It is 0.000000000001 of one, permanently,

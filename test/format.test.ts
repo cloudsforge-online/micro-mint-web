@@ -58,7 +58,7 @@ describe('every state has a word, a glyph and a sentence', () => {
   })
 
   it('says a failed launch will not be retried, in the service’s own words', () => {
-    // `mint/src/server.ts:500`, and `CLAIMABLE` at `tokens.ts:68-73`. A customer told only "failed"
+    // `mint/src/server.ts:524`, and `CLAIMABLE` at `tokens.ts:68-73`. A customer told only "failed"
     // will wait for a retry that a background job deliberately never performs.
     assert.match(statusTone('failed').meaning, /will not be retried automatically/)
   })

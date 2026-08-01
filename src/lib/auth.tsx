@@ -2,13 +2,13 @@
  * Session state for the tree, and the gate in front of the routes that need one.
  *
  * Hiding a route is NOT the security boundary — `mint` verifies the bearer on every route that
- * needs one (`authenticate`, `mint/src/server.ts:647`), and `ownedToken` answers 404 for another
- * customer's order (`mint/src/server.ts:598-615`). This exists so that a signed-out customer is
+ * needs one (`authenticate`, `mint/src/server.ts:671`), and `ownedToken` answers 404 for another
+ * customer's order (`mint/src/server.ts:622-639`). This exists so that a signed-out customer is
  * sent to sign in instead of being shown a screen made entirely of 401s.
  *
  * **Two routes are deliberately outside the gate**, because the service put them outside it:
- * `GET /v1/catalogue` (`mint/src/server.ts:340`) and `GET /v1/tokens/:id/page`
- * (`mint/src/server.ts:572`) make no `authenticate()` call at all. See `src/lib/routes.ts`.
+ * `GET /v1/catalogue` (`mint/src/server.ts:354`) and `GET /v1/tokens/:id/page`
+ * (`mint/src/server.ts:596`) make no `authenticate()` call at all. See `src/lib/routes.ts`.
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * ── The `/auth/me` shape ──────────────────────────────────────────────────────────────────────
