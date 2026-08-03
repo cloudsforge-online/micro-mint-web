@@ -1,5 +1,11 @@
 # micro-mint-web
 
+[![ci](https://github.com/cloudsforge-online/micro-mint-web/actions/workflows/ci.yml/badge.svg)](https://github.com/cloudsforge-online/micro-mint-web/actions/workflows/ci.yml)
+![node](https://img.shields.io/badge/node-%3E%3D22-5FA04E?logo=node.js&logoColor=white)
+![typescript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![module](https://img.shields.io/badge/module-ESM-F7DF1E?logo=javascript&logoColor=black)
+![tests](https://img.shields.io/badge/tests-in--process%20DOM-6E56CF)
+
 Forge Create's browser client: the catalogue, the token launch form, the status page a customer
 polls while a deploy runs, and the public project page a prospective buyer reads. It is a static
 bundle served by nginx and nothing else — no server, no session store, no database.
@@ -233,3 +239,10 @@ page.
   whole bespoke CI file — which is replaced by a call to `micro-org`'s reusable `web-ci.yml`. The
   measured target in docs/ecosystem/03 §5 is zero repositories with a bespoke CI file; treat this
   one as a liability with a deletion date.
+
+---
+
+## Provenance
+
+The code in this repository was written by **Claude Opus 5** and **Claude Fable 5**, assets
+generated with **FLUX 2 Pro**, under human direction and review.
