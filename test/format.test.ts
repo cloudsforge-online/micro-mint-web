@@ -152,6 +152,27 @@ describe('ids, hashes and amounts', () => {
     assert.equal(shards('not-a-number'), 'not-a-number')
   })
 
+  /**
+   * An absent price prints NO DIGIT, and this is asserted rather than assumed.
+   *
+   * `BigInt('')` is `0n` and `Number('')` is `0`, so every obvious way of formatting money turns a
+   * missing value into a confident zero. `shards` goes through neither — it is a regex over a
+   * decimal string — and the label at `src/pages/token.tsx` reads
+   * `Pay ${shards(token.priceShards)} Shards`, so an absent price gives "Pay Shards" and never
+   * "Pay 0 Shards". `tessera-web` prints no digit for an unobtainable balance for the same reason:
+   * a screen showing somebody their own money must distinguish UNKNOWN from ZERO, and a button
+   * offering to charge nothing is the one mistake in that class a customer will act on.
+   */
+  it('prints no digit at all for an absent price, rather than a zero', () => {
+    for (const absent of ['', ' ', undefined as unknown as string, null as unknown as string]) {
+      assert.doesNotMatch(
+        String(shards(absent) ?? ''),
+        /[0-9]/,
+        `an absent price rendered a digit, and "Pay 0 Shards" is a price nobody set`,
+      )
+    }
+  })
+
   it('names the three chains as a person names them', () => {
     assert.equal(chainName('ember'), 'Ember')
     assert.equal(chainName('eth'), 'Ethereum')

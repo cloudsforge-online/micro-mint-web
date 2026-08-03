@@ -110,6 +110,41 @@ const BOTH_MOUNTINGS: readonly { readonly label: string; readonly strict: boolea
 ]
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
+   The harness option this file leans on, checked before anything leans on it
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+describe('the strict mounting is really strict', () => {
+  it('mounts effects twice, which is what makes the strict half of every proof below mean anything', async () => {
+    const routes = orderRoutes()
+    let plain = 0
+    let strict = 0
+    await withScreen(
+      tokenAt(),
+      { url: `${ORIGIN}/tokens/${fx.ORDER_ID}`, storage: fx.SIGNED_IN, routes },
+      async (s) => {
+        await s.settle(20)
+        plain = s.api.matching(`GET /v1/tokens/${fx.ORDER_ID}`).length
+      },
+    )
+    await withScreen(
+      tokenAt(),
+      { url: `${ORIGIN}/tokens/${fx.ORDER_ID}`, storage: fx.SIGNED_IN, routes, strict: true },
+      async (s) => {
+        await s.settle(20)
+        strict = s.api.matching(`GET /v1/tokens/${fx.ORDER_ID}`).length
+      },
+    )
+
+    // StrictMode mounts, unmounts and re-mounts every effect, so `useResource` asks twice. If this
+    // ever stops being true the option has become a no-op and every "under StrictMode" test in
+    // this file is silently running the ordinary mounting twice — the shape of green that proves
+    // nothing.
+    assert.equal(plain, 1, 'the ordinary mounting ran its read more than once')
+    assert.equal(strict, 2, 'the strict mounting did not double-mount effects: `strict` is a no-op')
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
    Pay — the one that moves money
    ══════════════════════════════════════════════════════════════════════════════════════════ */
 
@@ -203,6 +238,56 @@ describe('two clicks in one tick — Pay', () => {
 })
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
+   The other half of a latch: it has to be RELEASED
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+describe('the latch is released on every ending, not only the happy one', () => {
+  it('a refused payment can be tried again', async () => {
+    let attempts = 0
+    await withScreen(
+      tokenAt(),
+      {
+        url: `${ORIGIN}/tokens/${fx.ORDER_ID}`,
+        storage: fx.SIGNED_IN,
+        routes: orderRoutes({
+          [`POST /v1/tokens/${fx.ORDER_ID}/pay`]: () => {
+            attempts += 1
+            return attempts === 1
+              ? {
+                  status: 402,
+                  body: fx.error('insufficient_balance', 'this account does not hold 2500 Shards'),
+                  requestId: 'req-pay-402',
+                }
+              : { status: 201, body: { token: fx.order({ status: 'paid' }), replayed: false } }
+          },
+        }),
+      },
+      async (s) => {
+        await s.settle(20)
+        await s.click(s.byRole('button', /Pay .* Shards/))
+        await s.settle(30)
+        assert.match(s.text(), /does not hold 2500 shards/i, 'the refusal never landed')
+
+        // Top up in another tab, come back, press again. This is the ONLY thing standing between a
+        // ref latch and a control that is dead for the rest of the session: the release has to be
+        // in a `finally`. A release on the success path alone leaves `inFlight` true forever after
+        // any failure, and the button then looks perfectly live and does nothing at all — which is
+        // strictly worse than the double submit it was added to prevent.
+        await s.click(s.byRole('button', /Pay .* Shards/))
+        await s.settle(30)
+
+        assert.equal(
+          s.api.matching(`POST /v1/tokens/${fx.ORDER_ID}/pay`).length,
+          2,
+          'the second press sent nothing. The latch was never released after the 402, so the pay ' +
+            'control is now permanently inert and only a page reload can clear it.',
+        )
+      },
+    )
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
    Deploy — the one that puts a contract on a chain
    ══════════════════════════════════════════════════════════════════════════════════════════ */
 
@@ -245,6 +330,36 @@ describe('two clicks in one tick — Deploy', () => {
       )
     })
   }
+
+  it('the control is disabled across the round trip, not merely ignoring presses', async () => {
+    await withScreen(
+      tokenAt(),
+      {
+        url: `${ORIGIN}/tokens/${fx.ORDER_ID}`,
+        storage: fx.SIGNED_IN,
+        routes: orderRoutes({
+          [`GET /v1/tokens/${fx.ORDER_ID}`]: {
+            body: { token: fx.order({ status: 'paid' }), attempts: [] },
+          },
+          [`POST /v1/tokens/${fx.ORDER_ID}/deploy`]: { status: 202, body: { accepted: true }, delayMs: 40 },
+        }),
+      },
+      async (s) => {
+        await s.settle(20)
+        const deploy = s.byRole('button', 'Deploy')
+        s.clickNoFlush(deploy)
+        await s.settle(0)
+        // The ref refuses the second call; the attribute is what tells a person the first one is
+        // still happening. A control that silently swallows presses is a control people press
+        // harder.
+        assert.ok(
+          deploy.hasAttribute('disabled'),
+          'the deploy control stayed live while its own 202 was in flight',
+        )
+        await s.settle(80)
+      },
+    )
+  })
 })
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -327,6 +442,34 @@ describe('two clicks in one tick — Save the project page', () => {
       )
     })
   }
+
+  it('the control is disabled across the round trip, not merely ignoring presses', async () => {
+    await withScreen(
+      tokenAt(),
+      {
+        url: `${ORIGIN}/tokens/${fx.ORDER_ID}`,
+        storage: fx.SIGNED_IN,
+        routes: orderRoutes({
+          [`PUT /v1/tokens/${fx.ORDER_ID}/page`]: {
+            status: 200,
+            body: { page: fx.projectPage() },
+            delayMs: 40,
+          },
+        }),
+      },
+      async (s) => {
+        await s.settle(20)
+        const save = s.byRole('button', /Save the project page/)
+        s.clickNoFlush(save)
+        await s.settle(0)
+        assert.ok(
+          save.hasAttribute('disabled'),
+          'the save control stayed live while its own PUT was in flight',
+        )
+        await s.settle(80)
+      },
+    )
+  })
 })
 
 /* ── helpers ────────────────────────────────────────────────────────────────────────────────── */

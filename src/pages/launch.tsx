@@ -118,6 +118,26 @@ export function LaunchPage() {
       </header>
 
       {catalogue.state === 'loading' && <Loading label="Reading the catalogue" />}
+      {/*
+        An unreachable catalogue used to render as NOTHING: the price line is `{catalogue.data &&
+        ...}` and there was no other branch, so a 503 left a customer filling in a form that never
+        mentioned a cost — indistinguishable from a page that simply has no price. `src/lib/
+        resource.ts` states the rule this violated in one line: FAILURE OUTRANKS EMPTINESS. An
+        upstream that could not be reached must not read as an authoritative answer, and "no price
+        is shown" is an answer.
+
+        The form stays usable, because it is honest to leave it usable: opening an order charges
+        nothing (`mint/src/server.ts:372`) and the price is set by the service at order time from
+        its own catalogue, not from anything this page holds. What the customer must not do is
+        reach the PAY screen having never been told a number, so the absence is named here.
+      */}
+      {(catalogue.state === 'failed' || catalogue.state === 'forbidden') && catalogue.error && (
+        <Failed
+          notice={catalogue.error}
+          onRetry={catalogue.reload}
+          title="The price could not be read"
+        />
+      )}
       {catalogue.data && (
         <p className="mw-note" role="status">
           <span className="mw-note__icon" aria-hidden="true">

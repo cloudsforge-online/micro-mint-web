@@ -426,6 +426,72 @@ describe('BJ-CRE — Forge Create', () => {
 })
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
+   An unreachable service must not read as an answer.
+   `src/lib/resource.ts`: FAILURE OUTRANKS EMPTINESS.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+describe('a service that could not be reached says so', () => {
+  it('the launch form names the missing price rather than silently omitting it', async () => {
+    await withScreen(
+      page(h(LaunchPage), '/launch'),
+      {
+        url: `${ORIGIN}/launch`,
+        storage: fx.SIGNED_IN,
+        routes: {
+          'GET /auth/me': { body: fx.ME },
+          'GET /v1/catalogue': {
+            status: 503,
+            body: fx.error('unavailable', 'the catalogue is temporarily unavailable'),
+            requestId: 'req-cat-503',
+          },
+        },
+      },
+      async (s) => {
+        await s.settle(30)
+        // The price line is conditional on `catalogue.data`, so before this branch existed a 503
+        // rendered as an ordinary page with no cost on it — and a page with no cost on it looks
+        // exactly like a page whose product is free. The failure has to be visible.
+        assert.match(s.text(), /price could not be read|temporarily unavailable/i,
+          'the catalogue was down and the form said nothing about it, so the absent price reads ' +
+            'as the whole truth about what this costs')
+        assert.match(s.text(), /req-cat-503/, 'no request id to quote for the outage')
+        // And the form is still usable, deliberately: opening an order charges nothing and the
+        // service sets the price itself. Blanking the page for a price lookup would be the same
+        // mistake in the other direction.
+        assert.ok(s.allByRole('textbox').length > 0, 'a price outage removed the form')
+      },
+    )
+  })
+
+  it('the launches list renders "no launches yet" only for an actual empty answer', async () => {
+    await withScreen(
+      page(h(TokensPage), '/tokens'),
+      {
+        url: `${ORIGIN}/tokens`,
+        storage: fx.SIGNED_IN,
+        routes: {
+          'GET /auth/me': { body: fx.ME },
+          'GET /v1/tokens': { networkError: 'the connection was reset' },
+        },
+      },
+      async (s) => {
+        await s.settle(30)
+        // The estate found `hasAnswer(t) ? t.data : []` making a wallet panel say "There is no
+        // balance to send" during an outage. This is the same sentence in this app's vocabulary,
+        // and a customer reading it about their own launches would reasonably conclude their
+        // orders were gone.
+        assert.doesNotMatch(
+          s.text(),
+          /no launches yet/i,
+          'an unreachable service was rendered as an authoritative "you have nothing"',
+        )
+        assert.match(s.text(), /did not load|could not be loaded/i, 'the outage is not stated')
+      },
+    )
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
    6.19 Group S — the adversarial matrix
    ══════════════════════════════════════════════════════════════════════════════════════════ */
 
