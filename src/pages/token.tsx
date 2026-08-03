@@ -208,8 +208,19 @@ export function TokenPage() {
               {pay.busy ? 'Paying…' : `Pay ${shards(token.priceShards)} Shards`}
             </button>
             <span className="mw-actions__note">
-              This debits your wallet. Retrying a lost response is safe: the service answers the
-              second attempt with the original result rather than charging again.
+              {/*
+                This sentence used to promise that "the service answers the second attempt with the
+                original result rather than charging again", and that is not what mint does.
+                `payForDeploy` re-reads the row `for update` and refuses anything that is not
+                `awaiting_payment` (mint/src/orders.ts:105-116), so a second attempt after the
+                first one committed answers 409 `order_state` (mint/src/server.ts:287-291) — not a
+                replay. Nobody is charged twice either way, which is the half a customer needs; but
+                a page that promises a friendly replay and then shows a red refusal has taught its
+                reader that the site is unreliable at the exact moment their money moved.
+              */}
+              This debits your wallet, once. If the answer is lost on the way back, reload this page
+              rather than pressing again: the charge and the state change happen in one transaction,
+              so this page is where you find out whether it went through.
             </span>
           </div>
         )}
