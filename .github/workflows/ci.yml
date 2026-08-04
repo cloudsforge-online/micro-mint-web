@@ -113,6 +113,28 @@ jobs:
           sparse-checkout: |
             src
 
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      # THE CONTRACT PACKAGE, SO THE RETIRED-CURRENCY CHECK HAS A LIST TO CHECK AGAINST.
+      #
+      # `test/retired-currency.test.ts` mounts this app's screens and refuses any asset named in
+      # `RETIRED_ASSETS` (contracts/packages/chain/src/index.ts:58). It READS that constant out of
+      # the package rather than importing it, so that the production image does not gain a build
+      # context for a test — the file's own header records why, at length.
+      #
+      # Unpinned, at `main`, deliberately: the union is shared at HEAD by roughly a dozen
+      # repositories (the package header, :45-47), and pinning here would mean an asset retired
+      # upstream stopped being enforced on this surface until somebody remembered to bump it.
+      #
+      # Only `packages/chain` is fetched — one constant is read, and nothing here builds it.
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      - uses: actions/checkout@v4
+        with:
+          repository: cloudsforge-online/micro-contracts
+          path: contracts
+          token: ${{ secrets.ESTATE_READ_TOKEN }}
+          sparse-checkout: |
+            packages/chain
+
       # Pinned, because the checkout lives at mint-web/ and the action looks for the packageManager
       # field in the workspace root, where there is no package.json.
       - uses: pnpm/action-setup@v4
@@ -167,6 +189,31 @@ jobs:
             exit 1
           }
           echo "ok: every cited route was verified against the service that serves it"
+
+      # ── The retired-currency check must have RUN, for the same reason ─────────────────────────
+      #
+      # It skips itself when there is no micro-contracts checkout, so that `pnpm test` passes for
+      # somebody who cloned only this repository. On the runner the checkout is present and the
+      # skip is a bug, not a state: a green suite that never looked at a screen is exactly how
+      # Shards stayed on Forge Create while nineteen test files passed over them.
+      - name: The screens were checked against the retired-asset list
+        working-directory: mint-web
+        run: |
+          set -euo pipefail
+          test -f ../contracts/packages/chain/src/index.ts || {
+            echo "::error::micro-contracts was not checked out; no screen was checked for retired currency"
+            exit 1
+          }
+          out=$(node --import tsx --import @cloudsforge/ui/test-loader --test test/retired-currency.test.ts 2>&1 || true)
+          if grep -q 'SKIPPED: no micro-contracts checkout' <<<"$out"; then
+            echo "::error::the retired-currency check skipped itself while micro-contracts was present"
+            exit 1
+          fi
+          grep -q 'has a retired asset to look for' <<<"$out" || {
+            echo "::error::the retired-currency check did not run against RETIRED_ASSETS"
+            exit 1
+          }
+          echo "ok: every screen was read for retired currency"
 
       # …and the cross-check can fail. Bend one citation and require the suite to go red, so a
       # `mint.test.ts` reduced to assertions that always pass cannot look like a verified client.
