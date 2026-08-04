@@ -12,20 +12,20 @@
  * with no `authenticate()` call and then had to explain a 403 that was never about authorisation.
  *
  * `mint` registers its routes through one `define(method, path, handler)` list
- * (`mint/src/server.ts:320-602`), so the surface is enumerable and the citations are stable.
+ * (`mint/src/server.ts:324-613`), so the surface is enumerable and the citations are stable.
  *
  * | Method | Path                    | Authenticates | Verified at              |
  * | ------ | ----------------------- | ------------- | ------------------------ |
- * | GET    | /v1/catalogue           | **no**        | mint/src/server.ts:354   |
- * | POST   | /v1/tokens              | yes           | mint/src/server.ts:373   |
- * | GET    | /v1/tokens              | yes           | mint/src/server.ts:441   |
- * | GET    | /v1/tokens/:id          | yes           | mint/src/server.ts:454   |
- * | POST   | /v1/tokens/:id/pay      | yes           | mint/src/server.ts:478   |
- * | POST   | /v1/tokens/:id/deploy   | yes           | mint/src/server.ts:515   |
- * | PUT    | /v1/tokens/:id/page     | yes           | mint/src/server.ts:570   |
- * | GET    | /v1/tokens/:id/page     | **no**        | mint/src/server.ts:596   |
+ * | GET    | /v1/catalogue           | **no**        | mint/src/server.ts:358   |
+ * | POST   | /v1/tokens              | yes           | mint/src/server.ts:384   |
+ * | GET    | /v1/tokens              | yes           | mint/src/server.ts:452   |
+ * | GET    | /v1/tokens/:id          | yes           | mint/src/server.ts:465   |
+ * | POST   | /v1/tokens/:id/pay      | yes           | mint/src/server.ts:489   |
+ * | POST   | /v1/tokens/:id/deploy   | yes           | mint/src/server.ts:526   |
+ * | PUT    | /v1/tokens/:id/page     | yes           | mint/src/server.ts:581   |
+ * | GET    | /v1/tokens/:id/page     | **no**        | mint/src/server.ts:607   |
  *
- * The service serves `/livez`, `/readyz` and `/metrics` as well (`server.ts:328`, `:330`, `:338`).
+ * The service serves `/livez`, `/readyz` and `/metrics` as well (`server.ts:332`, `:334`, `:342`).
  * They are not called from a browser and are not wrapped here.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  *
@@ -36,8 +36,8 @@
  * header read anywhere in `mint/src/server.ts`. Mint gets the same protection from STATE instead —
  * `payForDeploy` runs one conditional UPDATE guarded by `and status = 'awaiting_payment'`
  * (`mint/src/tokens.ts:326-332`) and answers 200 with `replayed: true` when it finds the work
- * already done (`mint/src/server.ts:498-503`), and `deploy` enqueues with `onConflict: 'keep'`
- * (`mint/src/server.ts:547-552`) so three clicks before the first job runs produce one run.
+ * already done (`mint/src/server.ts:509-514`), and `deploy` enqueues with `onConflict: 'keep'`
+ * (`mint/src/server.ts:558-563`) so three clicks before the first job runs produce one run.
  *
  * So this client sends no such header. Sending one would be harmless and would also be this app
  * asserting something about the service that is not true.
@@ -85,7 +85,7 @@ export type Feature = (typeof FEATURES)[number]
 /** `mint/src/catalogue.ts:28`. */
 export type Variant = 'fixed' | 'mintable' | 'foundry'
 
-/** `mint/src/chains.ts`, as the order form offers them (`mint/src/server.ts:380`). */
+/** `mint/src/chains.ts`, as the order form offers them (`mint/src/server.ts:391`). */
 export const CHAINS = ['ember', 'eth', 'sol'] as const
 export type ChainId = (typeof CHAINS)[number]
 
@@ -93,11 +93,44 @@ export const NETWORKS = ['mainnet', 'testnet'] as const
 export type Network = (typeof NETWORKS)[number]
 
 /**
- * One order, as `toWire` puts it on the wire (`mint/src/server.ts:641-669`).
+ * One order, as `toWire` puts it on the wire (`mint/src/server.ts:652-695`).
  *
- * `supply`, `cap` and `priceShards` are STRINGS. The service says why in one line at
- * `server.ts:652`: "A supply of 10^24 is an ordinary token and does not survive a JSON number."
+ * `supply`, `cap` and every money field are STRINGS. The service says why in one line at
+ * `server.ts:663`: "A supply of 10^24 is an ordinary token and does not survive a JSON number."
  * Nothing in this bundle parses any of them with `Number`; they are `bigint` or text, everywhere.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ * `priceShards` IS GONE, AND IT WAS REMOVED RATHER THAN RENAMED.
+ *
+ * SHARD was retired on 2026-08-04 (`contracts/packages/chain/src/index.ts:58`) and micro-mint
+ * migrated on 2026-08-05: an order is now durable in US CENTS and settled in EMBER, the shape
+ * `billing/src/migrations.ts:543` already took. `mint/src/migrations.ts:258` — migration 6,
+ * `retire_shard_pricing` — argues the whole thing, including why the stored integer does not move
+ * (SHARD has `decimals: 0` and the peg is 100 Shards to the dollar, so one Shard is exactly one
+ * cent and the backfill is the identity).
+ *
+ * The service DELETED the field instead of re-basing it, and this declaration follows: a client
+ * still reading `priceShards` now gets `undefined`, which is a thing a screen can notice, whereas
+ * a silently re-based field would have had this bundle print cents under a Shards label. The
+ * service says the same at `mint/src/server.ts:361-366`.
+ *
+ * ── WHY THERE ARE THREE MONEY FIELDS AND NOT ONE ──────────────────────────────────────────────
+ *
+ * `priceUsdCents` is what the customer was QUOTED. `chargeAmount` is what actually left their
+ * balance, in the smallest unit of `chargeAssetCode`. Neither can be derived from the other
+ * without a rate, and the rate belongs to micro-pricing — so `rateUsdScaled` records the figure
+ * the conversion actually used, at `RATE_SCALE`. A refund must return the EMBER that was TAKEN
+ * rather than whatever today's administered rate says $25.00 is worth
+ * (`mint/src/migrations.ts:294-302`), and a screen that showed only the quote could not tell a
+ * rate change from a bug.
+ *
+ * **`chargeAssetCode` is `'SHARD'` on an order paid before the migration, and this bundle renders
+ * that verbatim.** It is a receipt, not a price: the alternative is printing EMBER over a charge
+ * micro-ledger records as SHARD, which is a false statement about somebody's money and a worse
+ * defect than the retired word (`mint/src/server.ts:670-673` says the same from the other side).
+ * `test/retired-currency.test.ts` polices the LIVE surface, which is priced and settled in
+ * neither.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 export interface TokenOrder {
   readonly id: string
@@ -113,7 +146,24 @@ export interface TokenOrder {
   readonly cap: string | null
   readonly features: readonly Feature[]
   readonly status: TokenStatus
-  readonly priceShards: string
+  /** The quote, in US cents. Null only on a row a pre-migration-6 build wrote. */
+  readonly priceUsdCents: string | null
+  /** What was taken. `'EMBER'` on a new order, `'SHARD'` on an old one, null until paid. */
+  readonly chargeAssetCode: string | null
+  /** The charge in smallest units — wei for EMBER. Null until paid. */
+  readonly chargeAmount: string | null
+  /**
+   * The same charge in Sparks, when it is a whole number of them, and null when it is not.
+   *
+   * A Spark is 10⁻⁶ EMBER — a DISPLAY denomination of one asset and never a second asset code
+   * (`contracts/packages/chain/src/index.ts:363-364` states the rule the whole estate follows). The service
+   * computes it rather than this bundle, at `mint/src/server.ts:676-681`, and returns null instead
+   * of rounding, "because printing a rounded figure would show a price that is not the price"
+   * (`mint/src/pricingclient.ts:74-84`). Nothing here may fill that null in.
+   */
+  readonly chargeAmountSparks: string | null
+  /** The rate the conversion used, at `RATE_SCALE`, so the two amounts above can be checked. */
+  readonly rateUsdScaled: string | null
   readonly paidJournalEntryId: string | null
   readonly deployerAddress: string | null
   readonly contractAddress: string | null
@@ -126,7 +176,7 @@ export interface TokenOrder {
   readonly updatedAt: string
 }
 
-/** `mint/src/tokens.ts:670-677`, as rendered at `mint/src/server.ts:465-472`. */
+/** `mint/src/tokens.ts:670-677`, as rendered at `mint/src/server.ts:476-483`. */
 export type AttemptOutcome =
   | 'signed'
   | 'broadcast'
@@ -145,9 +195,19 @@ export interface DeployAttempt {
   readonly at: string
 }
 
-/** `mint/src/server.ts:354-370`. */
+/** `mint/src/server.ts:358-381`. */
 export interface Catalogue {
-  readonly priceShards: string
+  /** The list price, in US cents. A decimal string, and `'2500'` is $25.00. */
+  readonly priceUsdCents: string
+  /**
+   * What a deploy is charged in — `'EMBER'`.
+   *
+   * Read from the response rather than assumed, because the service publishes it precisely so that
+   * "a client never has to assume it" (`mint/src/server.ts:96-97`). A hard-coded 'EMBER' here
+   * would be a second place the settlement asset is decided, and the first defect this screen had
+   * was a currency name that outlived the thing it named.
+   */
+  readonly settlementAsset: string
   readonly network: string
   readonly variants: ReadonlyArray<{
     readonly variant: Variant
@@ -219,7 +279,7 @@ export interface RenderedPage {
 /* ══════════════════════════════ the calls ══════════════════════════════ */
 
 /**
- * `GET /v1/catalogue` — `mint/src/server.ts:354`.
+ * `GET /v1/catalogue` — `mint/src/server.ts:358`.
  *
  * **Makes no `authenticate()` call**: the handler is a literal body with no principal in it, and
  * the comment above it says why ("a catalogue behind a token cannot be browsed"). So this is sent
@@ -230,19 +290,19 @@ export function getCatalogue(signal?: AbortSignal): Promise<Catalogue> {
   return api<Catalogue>('/v1/catalogue', { auth: false, ...(signal ? { signal } : {}) })
 }
 
-/** `POST /v1/tokens` — `mint/src/server.ts:373`. Opens an order; charges nothing, deploys nothing. */
+/** `POST /v1/tokens` — `mint/src/server.ts:384`. Opens an order; charges nothing, deploys nothing. */
 export interface CreateOrderInput {
   readonly chain: ChainId
-  /** Optional: the service falls back to its own configured network (`server.ts:381`). */
+  /** Optional: the service falls back to its own configured network (`server.ts:392`). */
   readonly network?: Network
   readonly name: string
   readonly symbol: string
   readonly decimals: number
-  /** A positive decimal string, smallest units. `requireQuantity`, `mint/src/server.ts:713-719`. */
+  /** A positive decimal string, smallest units. `requireQuantity`, `mint/src/server.ts:739-745`. */
   readonly supply: string
   readonly cap?: string | null
   readonly features: readonly Feature[]
-  /** EIP-55 checksummed and never the zero address — `canonicaliseEvm`, `mint/src/server.ts:397`. */
+  /** EIP-55 checksummed and never the zero address — `canonicaliseEvm`, `mint/src/server.ts:408`. */
   readonly ownerAddress: string
   readonly ownerWalletId: string
   readonly metadataUri?: string | null
@@ -258,9 +318,9 @@ export function createOrder(input: CreateOrderInput, signal?: AbortSignal): Prom
 }
 
 /**
- * `GET /v1/tokens` — `mint/src/server.ts:441`.
+ * `GET /v1/tokens` — `mint/src/server.ts:452`.
  *
- * The `userId` query parameter is deliberately NOT exposed. `server.ts:444-445` honours it only
+ * The `userId` query parameter is deliberately NOT exposed. `server.ts:455-456` honours it only
  * for an admin principal and otherwise passes it through `subjectUserId`, which refuses a mismatch
  * — so from this bundle it can only ever be the caller's own id or a 403. Offering it would put an
  * act-as-anyone-shaped control in a customer app for no reachable behaviour.
@@ -270,12 +330,12 @@ export function listOrders(signal?: AbortSignal): Promise<{ tokens: readonly Tok
 }
 
 /**
- * `GET /v1/tokens/:id` — `mint/src/server.ts:454`.
+ * `GET /v1/tokens/:id` — `mint/src/server.ts:465`.
  *
- * The status URL a 202 points at. It reaches no chain (`server.ts:450-453`), so polling it cannot
+ * The status URL a 202 points at. It reaches no chain (`server.ts:461-464`), so polling it cannot
  * make a deploy slower — which is what makes the status screen's refresh honest rather than rude.
  * A malformed or foreign id is a **404**, not a 403: `ownedToken` answers both the same way on
- * purpose (`server.ts:622-627`), so that a caller cannot enumerate order ids.
+ * purpose (`server.ts:633-638`), so that a caller cannot enumerate order ids.
  */
 export function getOrder(
   id: string,
@@ -288,14 +348,14 @@ export function getOrder(
 }
 
 /**
- * `POST /v1/tokens/:id/pay` — `mint/src/server.ts:478`.
+ * `POST /v1/tokens/:id/pay` — `mint/src/server.ts:489`.
  *
  * One transaction: the ledger entry and the state change together. **201 on a fresh debit, 200 on
  * a replay**, and the body carries `replayed` so a client can tell which without comparing bodies
- * (`server.ts:498-503`). This app renders the difference rather than hiding it: "already paid" and
+ * (`server.ts:509-514`). This app renders the difference rather than hiding it: "already paid" and
  * "just paid" are different facts about the customer's money.
  *
- * 402 `insufficient_balance` is its own answer (`server.ts:283-286`) and is not a retryable error.
+ * 402 `insufficient_balance` is its own answer (`server.ts:287-290`) and is not a retryable error.
  */
 export function payForOrder(id: string): Promise<{ token: TokenOrder; replayed: boolean }> {
   return api<{ token: TokenOrder; replayed: boolean }>(
@@ -305,11 +365,11 @@ export function payForOrder(id: string): Promise<{ token: TokenOrder; replayed: 
 }
 
 /**
- * `POST /v1/tokens/:id/deploy` — `mint/src/server.ts:515`.
+ * `POST /v1/tokens/:id/deploy` — `mint/src/server.ts:526`.
  *
  * **202 AND A STATUS URL. IT REACHES NO CHAIN.** The handler authenticates, checks the mainnet
  * allowlist, runs one conditional UPDATE, enqueues, and returns a `Location`
- * (`mint/src/server.ts:509-568`; the file header at `server.ts:8-23` explains at length why the
+ * (`mint/src/server.ts:520-579`; the file header at `server.ts:8-23` explains at length why the
  * work cannot live inside the request). So this client must never treat the response as "deployed"
  * — it means "accepted", and the screen says exactly that.
  */
@@ -317,7 +377,7 @@ export interface DeployAccepted {
   readonly accepted: boolean
   readonly tokenId: string
   readonly status: TokenStatus
-  /** Named in the BODY as well as the header — `mint/src/server.ts:563-565`. */
+  /** Named in the BODY as well as the header — `mint/src/server.ts:574-576`. */
   readonly statusUrl: string
 }
 
@@ -326,10 +386,10 @@ export function deployOrder(id: string): Promise<DeployAccepted> {
 }
 
 /**
- * `PUT /v1/tokens/:id/page` — `mint/src/server.ts:570`.
+ * `PUT /v1/tokens/:id/page` — `mint/src/server.ts:581`.
  *
  * Every field is coerced by the handler rather than required: a missing `description` becomes `''`
- * and a non-array `links` becomes `[]` (`server.ts:574-584`). So the client sends the whole
+ * and a non-array `links` becomes `[]` (`server.ts:585-595`). So the client sends the whole
  * document every time — this is a PUT, and sending a partial one would silently blank the fields
  * it left out.
  */
@@ -350,10 +410,10 @@ export function putProjectPage(id: string, input: ProjectPageInput): Promise<{ p
 }
 
 /**
- * `GET /v1/tokens/:id/page` — `mint/src/server.ts:596`.
+ * `GET /v1/tokens/:id/page` — `mint/src/server.ts:607`.
  *
  * **Makes no `authenticate()` call**, deliberately: "a project page nobody can read without an
- * account is a project page that cannot do the one job it has" (`server.ts:593-594`). Sent with
+ * account is a project page that cannot do the one job it has" (`server.ts:604-605`). Sent with
  * `auth: false` for the same reason as the catalogue.
  */
 export function getProjectPage(id: string, signal?: AbortSignal): Promise<RenderedPage> {

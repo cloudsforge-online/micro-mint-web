@@ -60,7 +60,7 @@ const PAGES: ReadonlyArray<[string, string]> = [
 describe('the 202 is never rendered as a deploy', () => {
   /**
    * `POST /v1/tokens/:id/deploy` authenticates, checks the allowlist, runs one UPDATE, enqueues and
-   * returns a Location (mint/src/server.ts:509-568). Rendering "deployed" from that response would
+   * returns a Location (mint/src/server.ts:520-579). Rendering "deployed" from that response would
    * tell a customer their contract exists at a moment when nothing has been broadcast.
    */
   const body = withoutComments(token)
@@ -112,7 +112,7 @@ describe('the buttons are offered from the service’s own predicates', () => {
   })
 
   it('a replayed payment is reported as a replay rather than as a fresh charge', () => {
-    // 200 versus 201 — mint/src/server.ts:498-503. "Already paid" and "just paid" are different
+    // 200 versus 201 — mint/src/server.ts:509-514. "Already paid" and "just paid" are different
     // facts about somebody's money.
     assert.match(body, /pay\.result\.replayed/)
     assert.match(body, /already paid for/i)
@@ -173,7 +173,7 @@ describe('the order form tells the truth about what its button does', () => {
   const body = withoutComments(launch)
 
   it('says nothing is charged, beside the button that opens the order', () => {
-    // `POST /v1/tokens` charges nothing and deploys nothing — mint/src/server.ts:372. A form that
+    // `POST /v1/tokens` charges nothing and deploys nothing — mint/src/server.ts:383. A form that
     // takes a wallet id and an owner address looks exactly like one that is about to spend money.
     assert.match(body, /Nothing is charged/)
   })
@@ -186,7 +186,7 @@ describe('the order form tells the truth about what its button does', () => {
   })
 
   it('warns about the mainnet allowlist beside the network choice', () => {
-    // Checked at deploy, after payment — mint/src/server.ts:533-542. Beside the choice is the only
+    // Checked at deploy, after payment — mint/src/server.ts:544-553. Beside the choice is the only
     // place a customer can act on it.
     assert.match(body, /allowlisted accounts/)
   })
@@ -224,10 +224,10 @@ describe('every screen renders all four states rather than a spinner and a hope'
   })
 
   it('the launch list says when it has hit the service’s limit', () => {
-    // `listTokens(..., 100)` — mint/src/server.ts:446 — and there is no cursor. A list that
+    // `listTokens(..., 100)` — mint/src/server.ts:457 — and there is no cursor. A list that
     // quietly stops at a round number is a list a customer trusts.
     assert.match(withoutComments(tokens), /SERVICE_LIMIT/)
-    assert.match(tokens, /mint\/src\/server\.ts:446/)
+    assert.match(tokens, /mint\/src\/server\.ts:457/)
   })
 })
 

@@ -12,7 +12,13 @@ export const OWNER = '0x1111111111111111111111111111111111111111'
 
 export function catalogue(over: Partial<Catalogue> = {}): Catalogue {
   return {
-    priceShards: '2500',
+    // $25.00. The same integer the catalogue used to serve as `priceShards`, and deliberately so:
+    // SHARD has `decimals: 0` and the peg was 100 Shards to the dollar, so one Shard was exactly
+    // one cent and migration 6's backfill is the identity on the stored number
+    // (`mint/src/migrations.ts:282-292`). Changing it here would have made this fixture disagree
+    // with the rows the service actually holds.
+    priceUsdCents: '2500',
+    settlementAsset: 'EMBER',
     network: 'testnet',
     variants: [
       { variant: 'fixed', contract: 'ForgeFixed', features: [], cap: 'forbidden' },
@@ -28,7 +34,50 @@ export function catalogue(over: Partial<Catalogue> = {}): Catalogue {
   }
 }
 
+/**
+ * $25.00 settled at an administered rate of $0.05 per EMBER, which is 500 EMBER.
+ *
+ * The three numbers are consistent with each other rather than plausible-looking, because a
+ * fixture whose amounts do not agree teaches a screen to render an arrangement that cannot exist:
+ * `coinAmountForUsdCents(2500n, 18, 50_000n)` is `2500 · 10^18 · RATE_SCALE / (50_000 · 10^2)` =
+ * 5·10^20 wei (`contracts/packages/chain/src/index.ts:430-446`), and 5·10^20 / `WEI_PER_SPARK` is
+ * exactly 500,000,000 Sparks — so `chargeAmountSparks` is a whole number here and the Sparks
+ * display path is the one the screens exercise. `test/format.test.ts` covers the other branch,
+ * where the wei do not divide and the service sends null rather than a rounded figure.
+ */
+const SETTLED = {
+  chargeAssetCode: 'EMBER',
+  chargeAmount: '500000000000000000000',
+  chargeAmountSparks: '500000000',
+  rateUsdScaled: '50000',
+} as const
+
+/** Nothing taken, and nothing claimed about a rate. The state every order opens in. */
+const UNSETTLED = {
+  chargeAssetCode: null,
+  chargeAmount: null,
+  chargeAmountSparks: null,
+  rateUsdScaled: null,
+} as const
+
+/**
+ * One order.
+ *
+ * ── WHY THE CHARGE IS DERIVED FROM THE STATUS RATHER THAN LISTED ONCE ─────────────────────────
+ *
+ * Fifteen call sites say `fx.order({ status: 'paid' })` and nothing else. Written as a flat
+ * literal, that produced an order that is paid and was charged NOTHING — a row the service's own
+ * database refuses: `tokens_paid_records_charge` requires a charge asset and amount on anything
+ * with a journal entry (`mint/src/migrations.ts:387-392`). Every screen mounted over it would have
+ * been reading the "not charged yet" branch while claiming to test the paid one, which is the
+ * shape of defect this whole change exists to close.
+ *
+ * So the settlement fields follow the status, and an explicit `over` still wins — a test that
+ * wants a pre-migration order paid in SHARD, or a charge with no whole Spark in it, says so.
+ */
 export function order(over: Partial<TokenOrder> = {}): TokenOrder {
+  const status = over.status ?? 'awaiting_payment'
+  const paid = status !== 'draft' && status !== 'awaiting_payment'
   return {
     id: ORDER_ID,
     ownerSubject: 'user:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
@@ -43,7 +92,8 @@ export function order(over: Partial<TokenOrder> = {}): TokenOrder {
     cap: null,
     features: [],
     status: 'awaiting_payment',
-    priceShards: '2500',
+    priceUsdCents: '2500',
+    ...(paid ? SETTLED : UNSETTLED),
     paidJournalEntryId: null,
     deployerAddress: null,
     contractAddress: null,

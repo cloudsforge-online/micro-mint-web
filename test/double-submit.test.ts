@@ -46,11 +46,11 @@
  *   - PAY. `payForDeploy` re-reads the row `for update` (`mint/src/orders.ts:105-110`) and refuses
  *     anything that is not `awaiting_payment` (`mint/src/orders.ts:114-116`). A second concurrent
  *     request BLOCKS on the row lock, and when the first commits it wakes up, sees `paid`, and
- *     throws `OrderStateError` — which is a **409**, not a replay (`mint/src/server.ts:287-291`).
+ *     throws `OrderStateError` — which is a **409**, not a replay (`mint/src/server.ts:291-295`).
  *     The customer is charged once. But the second request's 409 lands in `useMutation`'s error
- *     state, so this screen renders "The payment did not go through" BESIDE "Paid. The Shards have
- *     been debited." One click, two truths, and the alarming one is wrong.
- *   - DEPLOY. The enqueue is `onConflict: 'keep'` (`mint/src/server.ts:547-552`), so two accepted
+ *     state, so this screen renders "The payment did not go through" BESIDE "Paid. 500,000,000
+ *     Sparks has been debited." One click, two truths, and the alarming one is wrong.
+ *   - DEPLOY. The enqueue is `onConflict: 'keep'` (`mint/src/server.ts:558-563`), so two accepted
  *     requests produce one job. Both answer 202. Nothing is deployed twice.
  *   - CREATE. `POST /v1/tokens` has no such guard at all: it is a plain `insert`
  *     (`mint/src/tokens.ts:315-334`). Two requests open TWO ORDERS. Neither is charged for by
@@ -95,6 +95,31 @@ const orderRoutes = (over: Routes = {}): Routes => ({
   [`GET /v1/tokens/${fx.ORDER_ID}`]: { body: { token: fx.order(), attempts: [] } },
   ...over,
 })
+
+/**
+ * The pay control, addressed by its accessible name.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ * THIS MATCHER WAS `/Pay .* Shards/`, AND IT WAS PART OF THE DEFECT.
+ *
+ * Four scenarios in this file found the button by a pattern containing the name of a currency the
+ * estate retired on 2026-08-04 (`contracts/packages/chain/src/index.ts:58`). They were green
+ * BECAUSE the retired word was on the screen: to take Shards off Forge Create, somebody had to
+ * edit this line first. `test/retired-currency.test.ts` names the shape — a suite made only of
+ * forward assertions cannot notice retired vocabulary, it pins it in place — and this is one of
+ * the four it names.
+ *
+ * The replacement anchors on the CURRENCY-FREE part of the label and asserts the shape of the
+ * amount rather than its unit, so the next re-denomination fails on the format check in
+ * `test/format.test.ts` (which is a test of a function) instead of quietly here.
+ *
+ * `^Pay ` with the space is load-bearing. The busy label is `Paying…` and it is the SAME element,
+ * so a matcher of `/^Pay/` would match both and `byRole` — which requires exactly one hit — would
+ * still pass while addressing whichever the render happened to produce. The `$` anchors out any
+ * future suffix for the same reason.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ */
+const PAY_BUTTON = /^Pay \$[\d,]+\.\d\d$/
 
 /**
  * Both mountings, every time.
@@ -167,7 +192,7 @@ describe('two clicks in one tick — Pay', () => {
         },
         async (s) => {
           await s.settle(20)
-          const pay = s.byRole('button', /Pay .* Shards/)
+          const pay = s.byRole('button', PAY_BUTTON)
           // No settle between them. This is the whole scenario: the second event is dispatched
           // before React has rendered anything in response to the first.
           s.clickNoFlush(pay)
@@ -194,7 +219,7 @@ describe('two clicks in one tick — Pay', () => {
         url: `${ORIGIN}/tokens/${fx.ORDER_ID}`,
         storage: fx.SIGNED_IN,
         routes: orderRoutes({
-          // The service's real answer to a duplicate: 409 `order_state` — `mint/src/server.ts:291`
+          // The service's real answer to a duplicate: 409 `order_state` — `mint/src/server.ts:295`
           // reached from `mint/src/orders.ts:114-116`. Stubbed as a function so the FIRST call
           // succeeds and only a SECOND one is refused, which is what the row lock produces.
           [`POST /v1/tokens/${fx.ORDER_ID}/pay`]: (_wire, n) =>
@@ -213,7 +238,7 @@ describe('two clicks in one tick — Pay', () => {
       },
       async (s) => {
         await s.settle(20)
-        const pay = s.byRole('button', /Pay .* Shards/)
+        const pay = s.byRole('button', PAY_BUTTON)
         s.clickNoFlush(pay)
         s.clickNoFlush(pay)
         await s.settle(60)
@@ -255,7 +280,7 @@ describe('the latch is released on every ending, not only the happy one', () => 
             return attempts === 1
               ? {
                   status: 402,
-                  body: fx.error('insufficient_balance', 'this account does not hold 2500 Shards'),
+                  body: fx.error('insufficient_balance', 'the EMBER balance for this account may not go negative'),
                   requestId: 'req-pay-402',
                 }
               : { status: 201, body: { token: fx.order({ status: 'paid' }), replayed: false } }
@@ -264,16 +289,16 @@ describe('the latch is released on every ending, not only the happy one', () => 
       },
       async (s) => {
         await s.settle(20)
-        await s.click(s.byRole('button', /Pay .* Shards/))
+        await s.click(s.byRole('button', PAY_BUTTON))
         await s.settle(30)
-        assert.match(s.text(), /does not hold 2500 shards/i, 'the refusal never landed')
+        assert.match(s.text(), /may not go negative/i, 'the refusal never landed')
 
         // Top up in another tab, come back, press again. This is the ONLY thing standing between a
         // ref latch and a control that is dead for the rest of the session: the release has to be
         // in a `finally`. A release on the success path alone leaves `inFlight` true forever after
         // any failure, and the button then looks perfectly live and does nothing at all — which is
         // strictly worse than the double submit it was added to prevent.
-        await s.click(s.byRole('button', /Pay .* Shards/))
+        await s.click(s.byRole('button', PAY_BUTTON))
         await s.settle(30)
 
         assert.equal(
@@ -322,7 +347,7 @@ describe('two clicks in one tick — Deploy', () => {
             s.api.matching(`POST /v1/tokens/${fx.ORDER_ID}/deploy`).length,
             1,
             'one double click asked twice for a contract to be put on a chain. The enqueue is ' +
-              "onConflict: 'keep' (mint/src/server.ts:547-552) so one job runs, but the screen " +
+              "onConflict: 'keep' (mint/src/server.ts:558-563) so one job runs, but the screen " +
               'promises "Pressing this twice produces one run, not two" and it must not be the ' +
               'queue alone that makes that sentence true.',
           )
@@ -435,7 +460,7 @@ describe('two clicks in one tick — Save the project page', () => {
             s.api.matching(`PUT /v1/tokens/${fx.ORDER_ID}/page`).length,
             1,
             'one double click sent two whole-document PUTs. A PUT of the whole document blanks ' +
-              'every field it omits (mint/src/server.ts:574-584), so two of them racing is two ' +
+              'every field it omits (mint/src/server.ts:585-595), so two of them racing is two ' +
               "writers for one project page and the later one wins whatever it happened to hold.",
           )
         },

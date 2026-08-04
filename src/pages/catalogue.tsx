@@ -1,7 +1,7 @@
 /**
  * What Forge Create can deploy, and what it costs.
  *
- * `GET /v1/catalogue` — `mint/src/server.ts:354`. **No `authenticate()` call**, so this screen is
+ * `GET /v1/catalogue` — `mint/src/server.ts:358`. **No `authenticate()` call**, so this screen is
  * fetched with `auth: false` and rendered to a signed-out visitor. That is not a convenience: the
  * handler's own comment says "a catalogue behind a token cannot be browsed", and a product whose
  * front page demands a session cannot answer the question people arrive with.
@@ -16,7 +16,7 @@ import { Link } from 'react-router-dom'
 import { Failed, Loading } from '../components/states.tsx'
 import { useResource } from '../lib/resource.ts'
 import { getCatalogue, type Catalogue } from '../lib/mint.ts'
-import { chainName, shards } from '../lib/format.ts'
+import { chainName, usd } from '../lib/format.ts'
 import { CHAINS } from '../lib/mint.ts'
 
 const TIER_COPY: Record<string, { title: string; blurb: string }> = {
@@ -49,9 +49,9 @@ export function CataloguePage() {
       <header className="mw-head">
         <h1 className="mw-head__title">Launch a token, cross-chain</h1>
         <p className="mw-head__lede">
-          Pick a contract, pay in Shards, and deploy to Ember, Ethereum or Solana. Every launch gets
-          a project page whose supply and authorities are read from the chain rather than from your
-          order.
+          Pick a contract, pay the listed dollar price, and deploy to Ember, Ethereum or Solana.
+          Every launch gets a project page whose supply and authorities are read from the chain
+          rather than from your order.
         </p>
       </header>
 
@@ -67,12 +67,25 @@ export function CataloguePage() {
               Price
             </h2>
             <p className="mw-price">
-              <span className="cf-num mw-price__value">{shards(catalogue.data.priceShards)}</span>{' '}
-              <span className="mw-price__unit">Shards per deploy</span>
+              {/* The quote, and the quote alone. What it costs in EMBER is a settlement-time
+                  question the catalogue cannot answer: the rate is read per payment and recorded
+                  on the order that used it (mint/src/pricingclient.ts:12-21), so a figure printed
+                  here would be a rate this screen never consulted. The note below says what the
+                  charge will be DENOMINATED in, which is the part that is durable. */}
+              {usd(catalogue.data.priceUsdCents) === null ? (
+                <span className="mw-absent">the price could not be read</span>
+              ) : (
+                <>
+                  <span className="cf-num mw-price__value">{usd(catalogue.data.priceUsdCents)}</span>{' '}
+                  <span className="mw-price__unit">per deploy</span>
+                </>
+              )}
             </p>
             <p className="mw-panel__note">
-              Charged once, when you pay for an order. Opening an order charges nothing
-              (<code className="cf-num">POST /v1/tokens</code>, mint/src/server.ts:372).
+              Charged once, when you pay for an order, and settled in{' '}
+              <code className="cf-num">{catalogue.data.settlementAsset}</code> at the rate at the
+              moment you pay. Opening an order charges nothing
+              (<code className="cf-num">POST /v1/tokens</code>, mint/src/server.ts:383).
               {/* The service's default network, which the order form pre-selects. Rendered because
                   a catalogue that does not say which network it priced is describing two
                   different products at one price. */}{' '}
@@ -131,7 +144,7 @@ export function CataloguePage() {
               {CHAINS.map(chainName).join(', ')}. A deploy is accepted immediately and runs as a
               job: the response is a <code className="cf-num">202</code> and a status address, never
               a contract. Nothing in a launch request reaches a chain
-              (mint/src/server.ts:509-514).
+              (mint/src/server.ts:520-525).
             </p>
           </section>
 

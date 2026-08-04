@@ -14,7 +14,7 @@
  *
  * **Deploy answers 202. It does not deploy.** `POST /v1/tokens/:id/deploy` authenticates, checks
  * the allowlist, runs one conditional UPDATE, enqueues a job and returns a `Location`
- * (`mint/src/server.ts:515`). A screen that says "deployed" because a button returned has told a
+ * (`mint/src/server.ts:526`). A screen that says "deployed" because a button returned has told a
  * customer their contract exists at a moment when nothing has been broadcast. BJ-CRE-04 asserts
  * the word on the screen after the 202, and BJ-CRE-05 asserts that the truth arrives from a
  * re-read rather than from the acknowledgement.
@@ -89,9 +89,14 @@ describe('BJ-CRE — Forge Create', () => {
             `the ${v.variant} variant has no entry`,
           )
         }
-        // With its cost. The price is a projection of the committed contracts, not a list
-        // somebody maintains, so it comes off the response.
-        assert.ok(s.text().includes('2,500') || s.text().includes('2500'), 'the price is not shown')
+        // With its cost, in the unit the response states it in. The price is a projection of the
+        // committed contracts, not a list somebody maintains, so it comes off the response —
+        // `priceUsdCents: '2500'` is $25.00 (`mint/src/server.ts:361-367`), and the settlement
+        // asset is read from the body too rather than being spelled out here. Asserting the
+        // FORMATTED dollar figure and not the raw integer is deliberate: `2500` on screen would
+        // satisfy a bare digit check while meaning cents, Shards or nothing at all.
+        assert.ok(s.text().includes('$25.00'), 'the price is not shown')
+        assert.ok(s.text().includes(cat.settlementAsset), 'the screen does not say what settles it')
 
         // And no credential went out. "A catalogue behind a token cannot be browsed."
         for (const w of s.api.wire) {
@@ -413,7 +418,7 @@ describe('BJ-CRE — Forge Create', () => {
         await s.type(network, 'mainnet')
 
         // Words, not a bare disabled control. The check happens at DEPLOY — after payment
-        // (`mint/src/server.ts:533-542`) — so the only place a customer can act on it is here.
+        // (`mint/src/server.ts:544-553`) — so the only place a customer can act on it is here.
         assert.match(s.text(), /allowlisted/i, 'choosing mainnet says nothing about the allowlist')
         assert.match(s.text(), /after payment|before paying/i, 'the ORDER of the two is the point')
         assert.ok(
@@ -628,7 +633,12 @@ describe('BJ-ADV — the adversarial matrix', () => {
         assert.equal(s.queryByRole('button', /pay /i), null, 'a paid order still offers Pay')
         assert.match(s.text(), /paid/i)
         // And the confirmation survived the re-read the payment triggered.
-        assert.match(s.text(), /paid\. the shards have been debited|the ledger entry is/i)
+        // The confirmation names the amount the RESPONSE reported, not a constant. It read
+        // /paid\. the shards have been debited/ before Forge Create was migrated off Shards, and
+        // that alternation was green because the retired word was on screen — one of the four
+        // assertions that pinned the defect in place. `fx.order({ status: 'paid' })` settles
+        // 500,000,000 Sparks (test/fixtures.ts), so this reads back what the fixture charged.
+        assert.match(s.text(), /paid\. 500,000,000 sparks has been debited|the ledger entry is/i)
       },
     )
   })
@@ -642,7 +652,7 @@ describe('BJ-ADV — the adversarial matrix', () => {
         routes: orderRoutes({
           [`POST /v1/tokens/${fx.ORDER_ID}/pay`]: {
             status: 402,
-            body: fx.error('insufficient_balance', 'this account does not hold 2500 Shards'),
+            body: fx.error('insufficient_balance', 'the EMBER balance for this account may not go negative'),
             requestId: 'req-pay-402',
           },
         }),
@@ -651,7 +661,7 @@ describe('BJ-ADV — the adversarial matrix', () => {
         await s.settle(20)
         await s.click(s.byRole('button', /pay /i))
         await s.settle(30)
-        assert.match(s.text(), /does not hold 2500 shards/i)
+        assert.match(s.text(), /may not go negative/i)
         assert.match(s.text(), /req-pay-402/)
         // In place OF the control, not of the page: the order is still readable.
         assert.ok(s.text().includes('Test Token'), 'a failed payment blanked the order')

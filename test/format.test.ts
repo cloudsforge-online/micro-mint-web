@@ -10,14 +10,15 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
   chainName,
+  charge,
   outcomeTone,
   relative,
   riskLines,
-  shards,
   shortHash,
   shortId,
   statusTone,
   timestamp,
+  usd,
 } from '../src/lib/format.ts'
 import { TOKEN_STATUSES, type AttemptOutcome, type RiskIndicators } from '../src/lib/mint.ts'
 
@@ -58,7 +59,7 @@ describe('every state has a word, a glyph and a sentence', () => {
   })
 
   it('says a failed launch will not be retried, in the service’s own words', () => {
-    // `mint/src/server.ts:524`, and `CLAIMABLE` at `tokens.ts:68-73`. A customer told only "failed"
+    // `mint/src/server.ts:535`, and `CLAIMABLE` at `tokens.ts:68-73`. A customer told only "failed"
     // will wait for a retry that a background job deliberately never performs.
     assert.match(statusTone('failed').meaning, /will not be retried automatically/)
   })
@@ -143,34 +144,106 @@ describe('ids, hashes and amounts', () => {
     assert.equal(shortId('5c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f'), '5c1d2e3f')
   })
 
-  it('groups a Shards price without going through a Number', () => {
-    assert.equal(shards('2500'), '2,500')
-    assert.equal(shards('12345678901234567890'), '12,345,678,901,234,567,890')
+  it('reads US cents as dollars without going through a Number', () => {
+    assert.equal(usd('2500'), '$25.00')
+    // The cents are never dropped and never rounded away. A price under a dollar has to survive.
+    assert.equal(usd('5'), '$0.05')
+    assert.equal(usd('99'), '$0.99')
+    assert.equal(usd('100'), '$1.00')
+    // 10^22 cents. `Number` renders this as 1e+22 and this must not.
+    assert.equal(usd('10000000000000000000000'), '$100,000,000,000,000,000,000.00')
   })
 
   it('returns an unexpected price verbatim rather than mangling it', () => {
-    assert.equal(shards('not-a-number'), 'not-a-number')
+    assert.equal(usd('not-a-number'), 'not-a-number')
   })
 
   /**
    * An absent price prints NO DIGIT, and this is asserted rather than assumed.
    *
    * `BigInt('')` is `0n` and `Number('')` is `0`, so every obvious way of formatting money turns a
-   * missing value into a confident zero. `shards` goes through neither — it is a regex over a
-   * decimal string — and the label at `src/pages/token.tsx` reads
-   * `Pay ${shards(token.priceShards)} Shards`, so an absent price gives "Pay Shards" and never
-   * "Pay 0 Shards". `tessera-web` prints no digit for an unobtainable balance for the same reason:
-   * a screen showing somebody their own money must distinguish UNKNOWN from ZERO, and a button
-   * offering to charge nothing is the one mistake in that class a customer will act on.
+   * missing value into a confident zero. `usd` goes through neither — it is a regex over a decimal
+   * string and then string arithmetic — and the label at `src/pages/token.tsx` reads
+   * `Pay ${usd(token.priceUsdCents)}` only when that value is non-null, so an absent price gives a
+   * bare "Pay" and never "Pay $0.00". `tessera-web` prints no digit for an unobtainable balance
+   * for the same reason: a screen showing somebody their own money must distinguish UNKNOWN from
+   * ZERO, and a button offering to charge nothing is the one mistake in that class a customer will
+   * act on.
+   *
+   * This is the property `shards()` was asserted on before Forge Create was migrated off Shards,
+   * carried over unchanged in intent. `null` is required specifically — `'$0.00'`, `'—'` and `''`
+   * would all satisfy "no digit" for the first two, and only `null` lets a caller tell the
+   * difference between a price of nothing and no price.
    */
   it('prints no digit at all for an absent price, rather than a zero', () => {
-    for (const absent of ['', ' ', undefined as unknown as string, null as unknown as string]) {
+    for (const absent of ['', ' ', undefined, null]) {
+      assert.equal(
+        usd(absent),
+        null,
+        `an absent price did not come back as null, and "Pay $0.00" is a price nobody set`,
+      )
       assert.doesNotMatch(
-        String(shards(absent) ?? ''),
+        String(usd(absent) ?? ''),
         /[0-9]/,
-        `an absent price rendered a digit, and "Pay 0 Shards" is a price nobody set`,
+        `an absent price rendered a digit, and "Pay $0.00" is a price nobody set`,
       )
     }
+  })
+
+  /* ── the charge, which is a receipt and not a price ──────────────────────────────────────── */
+
+  it('shows a settled charge in Sparks when the service supplied them', () => {
+    assert.equal(
+      charge({
+        chargeAssetCode: 'EMBER',
+        chargeAmount: '500000000000000000000',
+        chargeAmountSparks: '500000000',
+      }),
+      '500,000,000 Sparks',
+    )
+  })
+
+  /**
+   * The service returns null for `chargeAmountSparks` whenever the wei do not divide by 10^12, and
+   * this must NOT round into that null. `mint/src/pricingclient.ts:74-84`: "printing a rounded
+   * figure would show a price that is not the price". The exact wei is long and correct, and a
+   * customer reconciling their ledger needs the figure that is actually in it.
+   */
+  it('falls back to exact wei rather than inventing the Sparks the service withheld', () => {
+    const settled = charge({
+      chargeAssetCode: 'EMBER',
+      chargeAmount: '500000000000000000001',
+      chargeAmountSparks: null,
+    })
+    assert.equal(settled, '500,000,000,000,000,000,001 wei EMBER')
+    assert.doesNotMatch(String(settled), /Sparks/, 'a rounded Sparks figure was invented')
+  })
+
+  /**
+   * An order paid before 2026-08-05 was charged real SHARD and says so.
+   *
+   * `mint/src/server.ts:670-673` keeps `chargeAssetCode: 'SHARD'` on the wire for exactly these
+   * rows, because "the alternative is printing EMBER over a charge the ledger records as SHARD,
+   * which is a false statement about money". This renders what it is given. The live surface is
+   * quoted in USD and settled in EMBER, which is what `test/retired-currency.test.ts` reads.
+   */
+  it('reports a pre-migration charge in the asset it was actually taken in', () => {
+    assert.equal(
+      charge({ chargeAssetCode: 'SHARD', chargeAmount: '2500', chargeAmountSparks: null }),
+      '2,500 SHARD',
+    )
+  })
+
+  it('reports no charge at all before one has been taken, rather than a zero', () => {
+    assert.equal(
+      charge({ chargeAssetCode: null, chargeAmount: null, chargeAmountSparks: null }),
+      null,
+    )
+    // Half a charge is not a charge. An asset with no amount must not render as "EMBER".
+    assert.equal(
+      charge({ chargeAssetCode: 'EMBER', chargeAmount: null, chargeAmountSparks: null }),
+      null,
+    )
   })
 
   it('names the three chains as a person names them', () => {

@@ -10,11 +10,12 @@
  * word was renderable and no check could say so.
  *
  * The suite missed it because every assertion here is written FORWARDS: it names the thing it
- * wants and asserts the thing is present. `test/journeys.test.ts:92` asserts the price renders,
- * `test/double-submit.test.ts:170` addresses the pay button by `/Pay .* Shards/`. Both are green
- * BECAUSE the word is there. A suite made only of forward assertions cannot notice retired
- * vocabulary; it pins it in place. `test/double-submit.test.ts` would have to be edited before
- * this surface could stop saying Shards, which is a test defending the defect.
+ * wants and asserts the thing is present. `test/journeys.test.ts` asserted that the price renders;
+ * `test/double-submit.test.ts` addressed the pay button by `/Pay .* Shards/`. Both were green
+ * BECAUSE the word was there. A suite made only of forward assertions cannot notice retired
+ * vocabulary; it pins it in place. Five assertions across those two files had to be edited before
+ * this surface could stop saying Shards, and they are named in the commit that did it: a test
+ * that must be changed to allow a fix is a test defending the defect.
  *
  * ── WHY IT READS RENDERED TEXT AND NEVER SOURCE ────────────────────────────────────────────────
  *
@@ -39,17 +40,35 @@
  *
  * ── THE HONEST BOUNDARY: WHAT THIS FILE MAY NOT BE USED TO "FIX" ───────────────────────────────
  *
- * The offending strings are TRUE. `micro-mint` never migrated: it prices a deploy in Shards
- * (`mint/src/env.ts:300`, `MINT_DEPLOY_PRICE_SHARDS`), serves that number as `priceShards`
- * (`mint/src/server.ts:357` and `:657`), and debits real SHARD from the customer's ledger account
- * (`mint/src/ledgerclient.ts:108-118`). `micro-billing` migrated on 2026-08-04 and `micro-contracts`
- * with it; `micro-mint` did not.
+ * **This section is kept in the past tense rather than deleted, because the boundary it draws is
+ * the reason the fix took the shape it did, and a future reader who does not know it will reach
+ * for the shortcut it forbids.**
  *
- * So this surface may not be made green by relabelling. Printing "EMBER" over a charge the ledger
- * records as SHARD is not a copy fix, it is a false statement about money, and it would be a
- * WORSE defect than the one reported — the screen would stop matching the receipt. The remaining
- * failures below are owned by `micro-mint` and clear when it prices in USD and settles in EMBER,
- * the shape `billing/src/migrations.ts:543` already took.
+ * When this file was written it was RED on four of six screens, and it was merged red. The
+ * offending strings were TRUE: `micro-mint` had not migrated. It priced a deploy in Shards
+ * (`MINT_DEPLOY_PRICE_SHARDS`), served that number as `priceShards`, and debited real SHARD from
+ * the customer's ledger account (`mint/src/ledgerclient.ts:108-118`), while `micro-billing` and
+ * `micro-contracts` moved on 2026-08-04.
+ *
+ * So this surface could not be made green by relabelling. Printing "EMBER" over a charge the
+ * ledger records as SHARD is not a copy fix, it is a false statement about money, and it would
+ * have been a WORSE defect than the one reported — the screen would have stopped matching the
+ * receipt.
+ *
+ * It went green on 2026-08-05 because the SERVICE changed, which is the only thing that could
+ * have made it go green honestly. `mint/src/migrations.ts:258` (migration 6,
+ * `retire_shard_pricing`) makes an order durable in US cents and settled in EMBER — the shape
+ * `billing/src/migrations.ts:543` already took — and `mint/src/server.ts:361-367` removed
+ * `priceShards` from the wire rather than re-basing it. This bundle followed at `src/lib/mint.ts`
+ * and `src/lib/format.ts`.
+ *
+ * One thing did NOT change, and it is the boundary: an order paid before the migration still
+ * carries `chargeAssetCode: 'SHARD'` (`mint/src/server.ts:670-673`), and
+ * `src/lib/format.ts`'s `charge()` renders that verbatim. That is a receipt for a debit that
+ * really happened in SHARD, not a price anybody is being offered. The screens this file mounts are
+ * the LIVE ones, quoted in USD and settled in EMBER; if a future fixture is added here that is
+ * paid in a retired asset, the right answer is to leave this check red and ask why an archived
+ * receipt is being presented as a live surface.
  */
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
@@ -290,10 +309,13 @@ describe('retired currency never reaches a screen', () => {
               hit,
               null,
               `${surface.name} renders "${hit?.[0]}" — ${code} is retired ` +
-                `(contracts/packages/chain/src/index.ts:58). The money is EMBER, displayed in ` +
-                `Sparks when small (ibid. :293-336). This surface cannot be fixed by relabelling: ` +
-                `micro-mint still debits SHARD at mint/src/ledgerclient.ts:108-118, so the word is ` +
-                `true and the SERVICE is what must change.`,
+                `(contracts/packages/chain/src/index.ts:58). Forge Create quotes in US cents and ` +
+                `settles in EMBER, displayed in Sparks when the service supplies them ` +
+                `(mint/src/migrations.ts:258, mint/src/server.ts:676-681). Before reaching for the ` +
+                `copy: check what the SERVICE sent. This screen said Shards for a day after the ` +
+                `asset was retired, and it was telling the truth — the fix was migrating ` +
+                `micro-mint, not editing the sentence. If the word is true again, it is true ` +
+                `again, and the service is what must change.`,
             )
           }
         },

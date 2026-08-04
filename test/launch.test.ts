@@ -88,7 +88,7 @@ describe('THE CAP GUARD, which mint now applies at the order route too', () => {
    * This used to be the only cap check anywhere: `POST /v1/tokens` called `variantFor(features)`
    * and never read the cap, and `constructorArgs` — the first thing that did — ran inside the
    * deploy job, after payment. Mint closed that at the order route with `assertBuildable`
-   * (mint/src/catalogue.ts:179, called at mint/src/server.ts:412), which answers 400
+   * (mint/src/catalogue.ts:179, called at mint/src/server.ts:423), which answers 400
    * `unbuildable_order` naming the field.
    *
    * These cases are kept and are now a MIRROR test rather than a workaround test: each one must
@@ -137,7 +137,7 @@ describe('THE CAP GUARD, which mint now applies at the order route too', () => {
 })
 
 describe('the field rules mirror the service and are no stricter', () => {
-  it('accepts a name of exactly MAX_NAME and refuses one longer — server.ts:385', () => {
+  it('accepts a name of exactly MAX_NAME and refuses one longer — server.ts:396', () => {
     assert.deepEqual(problemsWith({ ...GOOD, name: 'x'.repeat(MAX_NAME) }), [])
     assert.deepEqual(fieldsOf({ ...GOOD, name: 'x'.repeat(MAX_NAME + 1) }), ['name'])
   })
@@ -146,7 +146,7 @@ describe('the field rules mirror the service and are no stricter', () => {
     assert.deepEqual(fieldsOf({ ...GOOD, name: '   ' }), ['name'])
   })
 
-  it('accepts the symbol boundaries and refuses outside them — server.ts:387', () => {
+  it('accepts the symbol boundaries and refuses outside them — server.ts:398', () => {
     for (const symbol of ['AB', 'A1', 'ABCDEFGHIJKL', 'X9Z']) {
       assert.deepEqual(problemsWith({ ...GOOD, symbol }), [], symbol)
     }
@@ -155,7 +155,7 @@ describe('the field rules mirror the service and are no stricter', () => {
     }
   })
 
-  it('accepts 0 and 18 decimals and refuses outside — server.ts:390', () => {
+  it('accepts 0 and 18 decimals and refuses outside — server.ts:401', () => {
     for (const decimals of ['0', '6', '18']) {
       assert.deepEqual(problemsWith({ ...GOOD, decimals, supply: '1000' }), [], decimals)
     }
@@ -166,7 +166,7 @@ describe('the field rules mirror the service and are no stricter', () => {
     }
   })
 
-  it('accepts the supply pattern the service accepts, and nothing else — server.ts:715', () => {
+  it('accepts the supply pattern the service accepts, and nothing else — server.ts:741', () => {
     for (const supply of ['1', '9'.repeat(78)]) {
       assert.ok(QUANTITY_PATTERN.test(supply), supply.slice(0, 8))
       assert.deepEqual(problemsWith({ ...GOOD, supply }), [], supply.slice(0, 8))
@@ -176,7 +176,7 @@ describe('the field rules mirror the service and are no stricter', () => {
     }
   })
 
-  it('refuses the zero address, which canonicaliseEvm refuses — server.ts:395-397', () => {
+  it('refuses the zero address, which canonicaliseEvm refuses — server.ts:406-408', () => {
     assert.deepEqual(fieldsOf({ ...GOOD, ownerAddress: ZERO_ADDRESS }), ['ownerAddress'])
   })
 
@@ -193,11 +193,11 @@ describe('the field rules mirror the service and are no stricter', () => {
     }
   })
 
-  it('requires the wallet the Shards come from — server.ts:398', () => {
+  it('requires the wallet the charge comes from — server.ts:409', () => {
     assert.deepEqual(fieldsOf({ ...GOOD, ownerWalletId: '  ' }), ['ownerWalletId'])
   })
 
-  it('refuses a chain or network the service does not know — server.ts:380, :368', () => {
+  it('refuses a chain or network the service does not know — server.ts:391, :368', () => {
     assert.deepEqual(fieldsOf({ ...GOOD, chain: 'btc' }), ['chain'])
     assert.deepEqual(fieldsOf({ ...GOOD, network: 'devnet' }), ['network'])
   })

@@ -3,10 +3,10 @@
  *
  * Routes used, each read out of `mint/src/server.ts`:
  *
- *   GET  /v1/tokens/:id         — server.ts:454   the order and every deploy attempt
- *   POST /v1/tokens/:id/pay     — server.ts:478   201 fresh, 200 replayed
- *   POST /v1/tokens/:id/deploy  — server.ts:515   **202 and a status URL**
- *   PUT  /v1/tokens/:id/page    — server.ts:570   the project page document
+ *   GET  /v1/tokens/:id         — server.ts:465   the order and every deploy attempt
+ *   POST /v1/tokens/:id/pay     — server.ts:489   201 fresh, 200 replayed
+ *   POST /v1/tokens/:id/deploy  — server.ts:526   **202 and a status URL**
+ *   PUT  /v1/tokens/:id/page    — server.ts:581   the project page document
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * **DEPLOY ANSWERS 202. IT DOES NOT DEPLOY.**
@@ -42,7 +42,7 @@ import {
   type DeployAttempt,
   type TokenOrder,
 } from '../lib/mint.ts'
-import { chainName, outcomeTone, shards, shortHash, statusTone, timestamp } from '../lib/format.ts'
+import { chainName, charge, outcomeTone, shortHash, statusTone, timestamp, usd } from '../lib/format.ts'
 import { displaySupply } from '../lib/launch.ts'
 
 interface OrderView {
@@ -85,7 +85,7 @@ export function TokenPage() {
         onRetry={order.reload}
         title={
           // 404 covers both "no such launch" and "not yours" — `ownedToken` answers them the same
-          // way on purpose (mint/src/server.ts:622-627) so that ids cannot be enumerated. The copy
+          // way on purpose (mint/src/server.ts:633-638) so that ids cannot be enumerated. The copy
           // must not claim to know which one it was.
           order.error.message.toLowerCase().includes('no such token')
             ? 'No launch at this address'
@@ -161,8 +161,27 @@ export function TokenPage() {
               {shortHash(token.ownerAddress)}
             </span>
           </Fact>
+          {/*
+            The QUOTE and the CHARGE, as two facts, because they are two facts. A deploy is priced
+            in US cents and settled in EMBER at the rate micro-pricing gave at the moment of
+            payment (mint/src/migrations.ts:294-302 argues why the row records both plus the rate),
+            so neither number can be derived from the other on this page. `usd()` and `charge()`
+            both return null rather than a zero when the service sent nothing — see
+            src/lib/format.ts — and both nulls are rendered as an absence, never as an amount.
+          */}
           <Fact label="Price">
-            <span className="cf-num">{shards(token.priceShards)}</span> Shards
+            {usd(token.priceUsdCents) === null ? (
+              <span className="mw-absent">no price on this order</span>
+            ) : (
+              <span className="cf-num">{usd(token.priceUsdCents)}</span>
+            )}
+          </Fact>
+          <Fact label="Charged">
+            {charge(token) === null ? (
+              <span className="mw-absent">nothing has been charged yet</span>
+            ) : (
+              <span className="cf-num">{charge(token)}</span>
+            )}
           </Fact>
           <Fact label="Opened">{timestamp(token.createdAt)}</Fact>
         </dl>
@@ -179,7 +198,7 @@ export function TokenPage() {
               {shortHash(token.paidJournalEntryId)}
             </code>
             . The debit and the state change happened in one transaction
-            (mint/src/server.ts:477).
+            (mint/src/server.ts:488).
           </p>
         ) : (
           <p className="mw-panel__note">
@@ -190,22 +209,39 @@ export function TokenPage() {
         {pay.error && <Failed notice={pay.error} title="The payment did not go through" />}
         {pay.result && (
           // 200 versus 201 is a real difference and the service exposes it deliberately
-          // (mint/src/server.ts:498-503). "Already paid" and "just paid" are different facts about
+          // (mint/src/server.ts:509-514). "Already paid" and "just paid" are different facts about
           // somebody's money and this screen does not flatten them.
           <p className="mw-note" role="status">
             <span className="mw-note__icon" aria-hidden="true">
               ✓
             </span>
+            {/*
+              The amount comes from the RESPONSE, not from a constant. This line used to read
+              "Paid. The Shards have been debited", which named a currency the page had not been
+              told anything about and which the estate retired underneath it
+              (contracts/packages/chain/src/index.ts:58). `pay.result.token` is the row the service
+              just wrote, so `charge()` reports what actually left the balance — and reports null,
+              rather than a plausible figure, if the service sent no charge back.
+            */}
             {pay.result.replayed
               ? 'This launch was already paid for. Nothing was charged a second time.'
-              : 'Paid. The Shards have been debited.'}
+              : charge(pay.result.token) === null
+                ? 'Paid. The charge has been debited.'
+                : `Paid. ${charge(pay.result.token)} has been debited.`}
           </p>
         )}
 
         {payable && (
           <div className="mw-actions">
             <button type="button" className="cf-btn cf-btn--primary" onClick={onPay} disabled={pay.busy}>
-              {pay.busy ? 'Paying…' : `Pay ${shards(token.priceShards)} Shards`}
+              {/*
+                The label carries the QUOTE, because that is the number the customer agreed to;
+                what it converts to in EMBER is decided at the rate read inside this request and
+                is not knowable here without inventing one. An order with no readable price gets a
+                bare "Pay" — `usd()` returns null rather than "$0.00" so that this button can never
+                offer to charge nothing, which test/format.test.ts asserts as a property.
+              */}
+              {pay.busy ? 'Paying…' : usd(token.priceUsdCents) === null ? 'Pay' : `Pay ${usd(token.priceUsdCents)}`}
             </button>
             <span className="mw-actions__note">
               {/*
@@ -213,7 +249,7 @@ export function TokenPage() {
                 original result rather than charging again", and that is not what mint does.
                 `payForDeploy` re-reads the row `for update` and refuses anything that is not
                 `awaiting_payment` (mint/src/orders.ts:105-116), so a second attempt after the
-                first one committed answers 409 `order_state` (mint/src/server.ts:287-291) — not a
+                first one committed answers 409 `order_state` (mint/src/server.ts:291-295) — not a
                 replay. Nobody is charged twice either way, which is the half a customer needs; but
                 a page that promises a friendly replay and then shows a red refusal has taught its
                 reader that the site is unreliable at the exact moment their money moved.
@@ -290,7 +326,7 @@ export function TokenPage() {
           <p className="mw-panel__note">
             No attempt has been recorded. Every signature, broadcast and confirmation appears here
             in the order it happened, so “did this ever reach a chain” is answered by the row rather
-            than by a log search (mint/src/server.ts:463-464).
+            than by a log search (mint/src/server.ts:474-475).
           </p>
         ) : (
           <div className="mw-tablewrap">
@@ -334,7 +370,7 @@ export function TokenPage() {
             Refresh
           </button>{' '}
           This page reaches no chain, so refreshing it cannot slow a deploy down
-          (mint/src/server.ts:450-453).
+          (mint/src/server.ts:461-464).
         </p>
       </section>
 
@@ -344,10 +380,10 @@ export function TokenPage() {
 }
 
 /**
- * The project page document. `PUT /v1/tokens/:id/page` — `mint/src/server.ts:570`.
+ * The project page document. `PUT /v1/tokens/:id/page` — `mint/src/server.ts:581`.
  *
  * It is a PUT of the WHOLE document: the handler coerces every missing field to an empty value
- * (`server.ts:574-584`), so sending a partial body silently blanks whatever was left out. This
+ * (`server.ts:585-595`), so sending a partial body silently blanks whatever was left out. This
  * editor therefore always sends all six fields.
  *
  * It is offered before deployment on purpose. The page renders publicly whatever the token's state,
@@ -364,7 +400,7 @@ function ProjectPageEditor({ tokenId, deployed }: { tokenId: string; deployed: b
         riskDisclosures,
         // Sent explicitly rather than omitted: this is a PUT, and an omitted field is a cleared
         // field. These three carry structured entries the form does not edit yet, and sending [] is
-        // what the handler would store for an absent value anyway (server.ts:579-581) — so the
+        // what the handler would store for an absent value anyway (server.ts:590-592) — so the
         // behaviour is the same and the intent is visible.
         links: [],
         team: [],
@@ -441,7 +477,7 @@ function ProjectPageEditor({ tokenId, deployed }: { tokenId: string; deployed: b
 /**
  * Why the deploy button is not there.
  *
- * Every branch is the service's own refusal, in the service's own words — `server.ts:520-531`.
+ * Every branch is the service's own refusal, in the service's own words — `server.ts:531-542`.
  * A disabled control with no explanation is how a customer concludes the site is broken.
  */
 function whyNotDeployable(token: TokenOrder): string {
