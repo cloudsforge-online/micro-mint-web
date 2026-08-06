@@ -1,8 +1,8 @@
 /**
- * The order form. `POST /v1/tokens` — `mint/src/server.ts:400`.
+ * The order form. `POST /v1/tokens` — `mint/src/server.ts:384`.
  *
  * It opens an order and does nothing else: "Nothing is charged and nothing is deployed"
- * (`mint/src/server.ts:399`). The screen says so above the button, because a form that takes a
+ * (`mint/src/server.ts:383`). The screen says so above the button, because a form that takes a
  * wallet id and an owner address looks exactly like one that is about to spend money.
  *
  * ── Nothing here is stricter than the service any more ────────────────────────────────────────
@@ -11,8 +11,8 @@
  * carries the citation for each). The cap rules used to be the exception: `POST /v1/tokens`
  * validated the FEATURE SET and never read the cap, so a pausable order with no cap was accepted,
  * payable, and then unbuildable. Mint refuses it at the order route now — `assertBuildable`
- * (`mint/src/catalogue.ts:179`, called at `mint/src/server.ts:439`) answers 400 `unbuildable_order`
- * naming the field (`mint/src/server.ts:319`).
+ * (`mint/src/catalogue.ts:179`, called at `mint/src/server.ts:423`) answers 400 `unbuildable_order`
+ * naming the field (`mint/src/server.ts:303`).
  *
  * The cap check stays here for the reason every other mirror does: the customer reads the message
  * beside the input instead of after a round trip. It is no longer the only copy, which means it is
@@ -127,7 +127,7 @@ export function LaunchPage() {
         is shown" is an answer.
 
         The form stays usable, because it is honest to leave it usable: opening an order charges
-        nothing (`mint/src/server.ts:399`) and the price is set by the service at order time from
+        nothing (`mint/src/server.ts:383`) and the price is set by the service at order time from
         its own catalogue, not from anything this page holds. What the customer must not do is
         reach the PAY screen having never been told a number, so the absence is named here.
       */}
@@ -192,7 +192,7 @@ export function LaunchPage() {
               ))}
             </select>
             {/*
-              The mainnet allowlist is checked at DEPLOY, not here: `server.ts:560-569` refuses a
+              The mainnet allowlist is checked at DEPLOY, not here: `server.ts:544-553` refuses a
               mainnet deploy from a subject that is not allowlisted, after the order is paid.
               Saying so beside the choice is the only place a customer can act on it.
             */}

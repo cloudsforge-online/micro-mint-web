@@ -276,7 +276,7 @@ export async function flush(useBeacon = false): Promise<void> {
   const batch = queue
   queue = []
   sends += 1
-  // `samples`, which is the key Lantern reads (`lantern/src/server.ts:496`). It answers a body
+  // `samples`, which is the key Lantern reads (`lantern/src/server.ts:480`). It answers a body
   // shaped `{"events":[…]}` with an explicit 400 naming this exact mistake, because that is the
   // envelope this file sent for months.
   const body = JSON.stringify({ samples: batch })

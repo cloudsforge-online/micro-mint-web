@@ -8,7 +8,7 @@
  * ── Which routes are gated is read off the SERVICE, not chosen ────────────────────────────────
  *
  * Two of the four are public because mint made them public: `GET /v1/catalogue`
- * (`mint/src/server.ts:374`) and `GET /v1/tokens/:id/page` (`mint/src/server.ts:623`) make no
+ * (`mint/src/server.ts:358`) and `GET /v1/tokens/:id/page` (`mint/src/server.ts:607`) make no
  * `authenticate()` call at all, and both carry a comment saying why — a catalogue behind a token
  * cannot be browsed, and a project page nobody can read without an account cannot do its one job.
  * Putting either behind `ProtectedRoute` would send a customer to sign in for a page the service
@@ -17,7 +17,7 @@
  *
  * The other two authenticate, so they are gated. The gate is NOT the security boundary — mint
  * verifies the bearer itself and `ownedToken` answers 404 for another customer's order
- * (`mint/src/server.ts:702-719`).
+ * (`mint/src/server.ts:633-650`).
  */
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/shell.tsx'

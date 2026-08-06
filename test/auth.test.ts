@@ -5,7 +5,7 @@
  * A DEFECT THAT IS FIXED, AND A TEST THAT KEEPS IT FIXED.
  *
  * Identity answers `{ user: {...}, session: {...}, organisations: [...] }` — the profile is NESTED
- * under `user` (`identity/src/server.ts:972-984`, body built by `toPublicUser` at
+ * under `user` (`identity/src/server.ts:891-903`, body built by `toPublicUser` at
  * `identity/src/users.ts:52-63`; both re-read against the source for this repository).
  *
  * The web template once declared `interface Me { handle?, roles? }` and read both fields off the
@@ -55,7 +55,7 @@ describe('the nested shape identity answers', () => {
   })
 
   it('prefixes the principal with `user:`, which is how mint spells an owner subject', () => {
-    // `userSubject(userId)` — mint/src/server.ts:444 — and `ownerSubject` on every row.
+    // `userSubject(userId)` — mint/src/server.ts:428 — and `ownerSubject` on every row.
     assert.match(readCustomer(NESTED).principal ?? '', /^user:/)
   })
 })
@@ -123,7 +123,7 @@ describe('the reading is not accidentally the template’s', () => {
   })
 
   it('cites where the nested shape is built, so the claim can be re-checked', () => {
-    assert.match(source, /identity\/src\/server\.ts:972-984/)
+    assert.match(source, /identity\/src\/server\.ts:891-903/)
     assert.match(source, /identity\/src\/users\.ts:52-63/)
   })
 })

@@ -101,8 +101,8 @@ describe('which routes are public matches which routes mint leaves unauthenticat
   /**
    * THE ASSERTION THIS FILE EXISTS FOR, ALONGSIDE THE nginx ONE.
    *
-   * `GET /v1/catalogue` (mint/src/server.ts:374) and `GET /v1/tokens/:id/page`
-   * (mint/src/server.ts:623) make no `authenticate()` call. Gating either would send a visitor to
+   * `GET /v1/catalogue` (mint/src/server.ts:358) and `GET /v1/tokens/:id/page`
+   * (mint/src/server.ts:607) make no `authenticate()` call. Gating either would send a visitor to
    * sign in for a page the service would have served them — and the estate has already shipped the
    * mirror-image defect, a client sending a bearer to a route with no `authenticate()` call and
    * then reasoning about a 403 that was never about authorisation.

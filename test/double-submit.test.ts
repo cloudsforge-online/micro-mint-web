@@ -46,11 +46,11 @@
  *   - PAY. `payForDeploy` re-reads the row `for update` (`mint/src/orders.ts:105-110`) and refuses
  *     anything that is not `awaiting_payment` (`mint/src/orders.ts:114-116`). A second concurrent
  *     request BLOCKS on the row lock, and when the first commits it wakes up, sees `paid`, and
- *     throws `OrderStateError` — which is a **409**, not a replay (`mint/src/server.ts:307-311`).
+ *     throws `OrderStateError` — which is a **409**, not a replay (`mint/src/server.ts:291-295`).
  *     The customer is charged once. But the second request's 409 lands in `useMutation`'s error
  *     state, so this screen renders "The payment did not go through" BESIDE "Paid. 500,000,000
  *     Sparks has been debited." One click, two truths, and the alarming one is wrong.
- *   - DEPLOY. The enqueue is `onConflict: 'keep'` (`mint/src/server.ts:574-579`), so two accepted
+ *   - DEPLOY. The enqueue is `onConflict: 'keep'` (`mint/src/server.ts:558-563`), so two accepted
  *     requests produce one job. Both answer 202. Nothing is deployed twice.
  *   - CREATE. `POST /v1/tokens` has no such guard at all: it is a plain `insert`
  *     (`mint/src/tokens.ts:315-334`). Two requests open TWO ORDERS. Neither is charged for by
@@ -219,7 +219,7 @@ describe('two clicks in one tick — Pay', () => {
         url: `${ORIGIN}/tokens/${fx.ORDER_ID}`,
         storage: fx.SIGNED_IN,
         routes: orderRoutes({
-          // The service's real answer to a duplicate: 409 `order_state` — `mint/src/server.ts:311`
+          // The service's real answer to a duplicate: 409 `order_state` — `mint/src/server.ts:295`
           // reached from `mint/src/orders.ts:114-116`. Stubbed as a function so the FIRST call
           // succeeds and only a SECOND one is refused, which is what the row lock produces.
           [`POST /v1/tokens/${fx.ORDER_ID}/pay`]: (_wire, n) =>
@@ -347,7 +347,7 @@ describe('two clicks in one tick — Deploy', () => {
             s.api.matching(`POST /v1/tokens/${fx.ORDER_ID}/deploy`).length,
             1,
             'one double click asked twice for a contract to be put on a chain. The enqueue is ' +
-              "onConflict: 'keep' (mint/src/server.ts:574-579) so one job runs, but the screen " +
+              "onConflict: 'keep' (mint/src/server.ts:558-563) so one job runs, but the screen " +
               'promises "Pressing this twice produces one run, not two" and it must not be the ' +
               'queue alone that makes that sentence true.',
           )
@@ -460,7 +460,7 @@ describe('two clicks in one tick — Save the project page', () => {
             s.api.matching(`PUT /v1/tokens/${fx.ORDER_ID}/page`).length,
             1,
             'one double click sent two whole-document PUTs. A PUT of the whole document blanks ' +
-              'every field it omits (mint/src/server.ts:601-611), so two of them racing is two ' +
+              'every field it omits (mint/src/server.ts:585-595), so two of them racing is two ' +
               "writers for one project page and the later one wins whatever it happened to hold.",
           )
         },

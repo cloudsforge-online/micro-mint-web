@@ -142,7 +142,7 @@ describe('the send', () => {
       assert.equal(fetch.calls.length, 1)
       const call = fetch.calls[0]
       assert.ok(call)
-      // The path Lantern serves (`lantern/src/server.ts:458`). `/ingest/browser` is served by
+      // The path Lantern serves (`lantern/src/server.ts:442`). `/ingest/browser` is served by
       // nothing and 404s without CORS headers, which the page cannot even read.
       assert.equal(new URL(call.url).pathname, '/ingest/client')
 

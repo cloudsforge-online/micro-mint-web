@@ -3,7 +3,7 @@
  *
  * Every rule below is one the SERVICE already enforces, restated here so the customer is told
  * before they submit rather than after. Client-side validation is never the boundary — mint
- * refuses the same things at `mint/src/server.ts:400-466` and would refuse them if this file were
+ * refuses the same things at `mint/src/server.ts:384-450` and would refuse them if this file were
  * deleted — so each check carries the line it mirrors, and none of them is stricter than the
  * service. A client that refuses something the service accepts is a client that has quietly
  * removed a feature.
@@ -18,9 +18,9 @@
  * never be built.
  *
  * Mint now refuses that at the order route: `assertBuildable`
- * (`mint/src/catalogue.ts:179`, called at `mint/src/server.ts:439`) runs the deploy path's own
+ * (`mint/src/catalogue.ts:179`, called at `mint/src/server.ts:423`) runs the deploy path's own
  * `variantFor` and `constructorArgs` against the request and answers **400 `unbuildable_order`**
- * with the offending `field` (`mint/src/server.ts:319`). The cap rule below is therefore an
+ * with the offending `field` (`mint/src/server.ts:303`). The cap rule below is therefore an
  * ordinary mirror like every other rule in this file — it exists so the customer sees the message
  * next to the input rather than after a round trip, not because it is the only copy.
  *
@@ -34,18 +34,18 @@ import type { Feature, Variant } from './mint.ts'
 
 /* ══════════════════════════════ the field rules ══════════════════════════════ */
 
-/** `mint/src/server.ts:160` — `MAX_NAME = 64`. */
+/** `mint/src/server.ts:144` — `MAX_NAME = 64`. */
 export const MAX_NAME = 64
 
-/** `mint/src/server.ts:161` — `MAX_SYMBOL = 12`, and the pattern at `server.ts:414`. */
+/** `mint/src/server.ts:145` — `MAX_SYMBOL = 12`, and the pattern at `server.ts:398`. */
 export const SYMBOL_PATTERN = /^[A-Z0-9]{2,12}$/
 
-/** `requireInteger(body, 'decimals', 0, 18)` — `mint/src/server.ts:417`. */
+/** `requireInteger(body, 'decimals', 0, 18)` — `mint/src/server.ts:401`. */
 export const MIN_DECIMALS = 0
 export const MAX_DECIMALS = 18
 
 /**
- * `requireQuantity` — `mint/src/server.ts:808-814`.
+ * `requireQuantity` — `mint/src/server.ts:739-745`.
  *
  * Positive, no leading zero, at most 78 digits. Note what it is NOT: it is not a human amount.
  * See `smallestUnitWarning`.
@@ -130,7 +130,7 @@ export function problemsWith(draft: LaunchDraft): readonly FieldProblem[] {
   if (draft.name.trim().length === 0) {
     bad('name', 'A token needs a name.')
   } else if (draft.name.length > MAX_NAME) {
-    // Mirrors `mint/src/server.ts:412`, which counts the raw string rather than the trimmed one.
+    // Mirrors `mint/src/server.ts:396`, which counts the raw string rather than the trimmed one.
     bad('name', `At most ${MAX_NAME} characters; this is ${draft.name.length}.`)
   }
 
