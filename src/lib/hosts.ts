@@ -7,8 +7,8 @@
  *
  * ── The dev port disagreement, reported rather than papered over ───────────────────────────────
  *
- * The surface registry gives `create` **devPort 4004** (`ui/packages/ui/src/surfaces.ts:214-225`).
- * `mint` binds **4000**: `mint/src/env.ts:251` defaults `PORT` to 4000 and `mint/.env.example:38`
+ * The surface registry gives `create` **devPort 4004** (`ui/packages/ui/src/surfaces.ts`).
+ * `mint` binds **4000**: `mint/src/env.ts` defaults `PORT` to 4000 and `mint/.env.example`
  * sets it to 4000. Under `pnpm dev` the registry value is the one this bundle calls, so a mint
  * started from its own example environment is not where this app looks.
  *
@@ -31,7 +31,7 @@ import { cloudsforgeHosts, type CloudsForgeHosts, type SurfaceKey } from '@cloud
  * The surface this application IS.
  *
  * It selects the switcher entry marked current, and it names this app's own API host.
- * `ui/packages/ui/src/surfaces.ts:214-225` registers `create` as a product with `inSwitcher: true`,
+ * `ui/packages/ui/src/surfaces.ts` registers `create` as a product with `inSwitcher: true`,
  * accent `#b28e1e`, glyph `✦` and subdomain `create`.
  */
 export const PRODUCT: SurfaceKey = 'create'

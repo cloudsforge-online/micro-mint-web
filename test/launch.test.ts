@@ -52,7 +52,7 @@ describe('the baseline draft is accepted, so a failure below means something', (
   })
 })
 
-describe('the variant is the EXACT match or nothing — mint/src/catalogue.ts:98-111', () => {
+describe('the variant is the EXACT match or nothing — mint/src/catalogue.ts', () => {
   it('maps the three offered sets to the three committed contracts', () => {
     assert.equal(variantFor([]), 'fixed')
     assert.equal(variantFor(['mintable', 'burnable']), 'mintable')
@@ -88,7 +88,7 @@ describe('THE CAP GUARD, which mint now applies at the order route too', () => {
    * This used to be the only cap check anywhere: `POST /v1/tokens` called `variantFor(features)`
    * and never read the cap, and `constructorArgs` — the first thing that did — ran inside the
    * deploy job, after payment. Mint closed that at the order route with `assertBuildable`
-   * (mint/src/catalogue.ts:179, called at mint/src/server.ts:439), which answers 400
+   * (mint/src/catalogue.ts, called at mint/src/server.ts), which answers 400
    * `unbuildable_order` naming the field.
    *
    * These cases are kept and are now a MIRROR test rather than a workaround test: each one must
@@ -124,7 +124,7 @@ describe('THE CAP GUARD, which mint now applies at the order route too', () => {
   })
 
   it('accepts a cap equal to the supply, because the contract does', () => {
-    // `constructorArgs` refuses only `cap < supply` (catalogue.ts:142-143). Refusing equality here
+    // `constructorArgs` refuses only `cap < supply` (catalogue.ts). Refusing equality here
     // would be this form being stricter than the chain, which is the failure mode named at the top.
     const draft = {
       ...GOOD,
@@ -137,7 +137,7 @@ describe('THE CAP GUARD, which mint now applies at the order route too', () => {
 })
 
 describe('the field rules mirror the service and are no stricter', () => {
-  it('accepts a name of exactly MAX_NAME and refuses one longer — server.ts:412', () => {
+  it('accepts a name of exactly MAX_NAME and refuses one longer — server.ts', () => {
     assert.deepEqual(problemsWith({ ...GOOD, name: 'x'.repeat(MAX_NAME) }), [])
     assert.deepEqual(fieldsOf({ ...GOOD, name: 'x'.repeat(MAX_NAME + 1) }), ['name'])
   })
@@ -146,7 +146,7 @@ describe('the field rules mirror the service and are no stricter', () => {
     assert.deepEqual(fieldsOf({ ...GOOD, name: '   ' }), ['name'])
   })
 
-  it('accepts the symbol boundaries and refuses outside them — server.ts:414', () => {
+  it('accepts the symbol boundaries and refuses outside them — server.ts', () => {
     for (const symbol of ['AB', 'A1', 'ABCDEFGHIJKL', 'X9Z']) {
       assert.deepEqual(problemsWith({ ...GOOD, symbol }), [], symbol)
     }
@@ -155,7 +155,7 @@ describe('the field rules mirror the service and are no stricter', () => {
     }
   })
 
-  it('accepts 0 and 18 decimals and refuses outside — server.ts:417', () => {
+  it('accepts 0 and 18 decimals and refuses outside — server.ts', () => {
     for (const decimals of ['0', '6', '18']) {
       assert.deepEqual(problemsWith({ ...GOOD, decimals, supply: '1000' }), [], decimals)
     }
@@ -166,7 +166,7 @@ describe('the field rules mirror the service and are no stricter', () => {
     }
   })
 
-  it('accepts the supply pattern the service accepts, and nothing else — server.ts:810', () => {
+  it('accepts the supply pattern the service accepts, and nothing else — server.ts', () => {
     for (const supply of ['1', '9'.repeat(78)]) {
       assert.ok(QUANTITY_PATTERN.test(supply), supply.slice(0, 8))
       assert.deepEqual(problemsWith({ ...GOOD, supply }), [], supply.slice(0, 8))
@@ -176,7 +176,7 @@ describe('the field rules mirror the service and are no stricter', () => {
     }
   })
 
-  it('refuses the zero address, which canonicaliseEvm refuses — server.ts:422-424', () => {
+  it('refuses the zero address, which canonicaliseEvm refuses — server.ts', () => {
     assert.deepEqual(fieldsOf({ ...GOOD, ownerAddress: ZERO_ADDRESS }), ['ownerAddress'])
   })
 
@@ -193,11 +193,11 @@ describe('the field rules mirror the service and are no stricter', () => {
     }
   })
 
-  it('requires the wallet the charge comes from — server.ts:425', () => {
+  it('requires the wallet the charge comes from — server.ts', () => {
     assert.deepEqual(fieldsOf({ ...GOOD, ownerWalletId: '  ' }), ['ownerWalletId'])
   })
 
-  it('refuses a chain or network the service does not know — server.ts:407, :368', () => {
+  it('refuses a chain or network the service does not know — server.ts', () => {
     assert.deepEqual(fieldsOf({ ...GOOD, chain: 'btc' }), ['chain'])
     assert.deepEqual(fieldsOf({ ...GOOD, network: 'devnet' }), ['network'])
   })
@@ -213,7 +213,7 @@ describe('the field rules mirror the service and are no stricter', () => {
 describe('the smallest-unit trap', () => {
   /**
    * `supply` reaches the constructor UNSCALED — `_mint(recipient_, initialSupply_)` in all three
-   * contracts (mint/src/contracts/ForgeTokens.sol:38, :58, :83). `decimals` is a separate
+   * contracts (mint/src/contracts/ForgeTokens.sol). `decimals` is a separate
    * constructor argument that only changes what a wallet displays.
    */
   it('renders base units as the amount a wallet will show', () => {

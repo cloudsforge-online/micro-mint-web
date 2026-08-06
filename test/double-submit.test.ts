@@ -35,25 +35,25 @@
  * ── What the server does with the duplicate, so this file does not overclaim ───────────────────
  *
  * Mint reads NO inbound `Idempotency-Key` on any route — `grep "'idempotency-key'" mint/src/` is
- * empty, and the `idempotencyKey` occurrences in `mint/src/ledgerclient.ts:79` and
- * `mint/src/custodyclient.ts:206` are keys mint SENDS DOWNSTREAM, derived as
+ * empty, and the `idempotencyKey` occurrences in `mint/src/ledgerclient.ts` and
+ * `mint/src/custodyclient.ts` are keys mint SENDS DOWNSTREAM, derived as
  * `mint:order:<tokenId>`. So this client cannot send one, and the client-side latch is the only
  * client-side lever there is.
  *
  * Mint is nonetheless safe against the duplicate, and it is worth writing down exactly how,
  * because "safe" here does not mean "quiet":
  *
- *   - PAY. `payForDeploy` re-reads the row `for update` (`mint/src/orders.ts:105-110`) and refuses
- *     anything that is not `awaiting_payment` (`mint/src/orders.ts:114-116`). A second concurrent
+ *   - PAY. `payForDeploy` re-reads the row `for update` (`mint/src/orders.ts`) and refuses
+ *     anything that is not `awaiting_payment` (`mint/src/orders.ts`). A second concurrent
  *     request BLOCKS on the row lock, and when the first commits it wakes up, sees `paid`, and
- *     throws `OrderStateError` — which is a **409**, not a replay (`mint/src/server.ts:307-311`).
+ *     throws `OrderStateError` — which is a **409**, not a replay (`mint/src/server.ts`).
  *     The customer is charged once. But the second request's 409 lands in `useMutation`'s error
  *     state, so this screen renders "The payment did not go through" BESIDE "Paid. 500,000,000
  *     Sparks has been debited." One click, two truths, and the alarming one is wrong.
- *   - DEPLOY. The enqueue is `onConflict: 'keep'` (`mint/src/server.ts:574-579`), so two accepted
+ *   - DEPLOY. The enqueue is `onConflict: 'keep'` (`mint/src/server.ts`), so two accepted
  *     requests produce one job. Both answer 202. Nothing is deployed twice.
  *   - CREATE. `POST /v1/tokens` has no such guard at all: it is a plain `insert`
- *     (`mint/src/tokens.ts:315-334`). Two requests open TWO ORDERS. Neither is charged for by
+ *     (`mint/src/tokens.ts`). Two requests open TWO ORDERS. Neither is charged for by
  *     itself — payment is a separate action — but the customer navigates to one of them and the
  *     other is left in `awaiting_payment` forever, in a list capped at 100 rows.
  *
@@ -103,7 +103,7 @@ const orderRoutes = (over: Routes = {}): Routes => ({
  * THIS MATCHER WAS `/Pay .* Shards/`, AND IT WAS PART OF THE DEFECT.
  *
  * Four scenarios in this file found the button by a pattern containing the name of a currency the
- * estate retired on 2026-08-04 (`contracts/packages/chain/src/index.ts:58`). They were green
+ * estate retired on 2026-08-04 (`contracts/packages/chain/src/index.ts`). They were green
  * BECAUSE the retired word was on the screen: to take Shards off Forge Create, somebody had to
  * edit this line first. `test/retired-currency.test.ts` names the shape — a suite made only of
  * forward assertions cannot notice retired vocabulary, it pins it in place — and this is one of
@@ -203,7 +203,7 @@ describe('two clicks in one tick — Pay', () => {
             s.api.matching(`POST /v1/tokens/${fx.ORDER_ID}/pay`).length,
             1,
             'one double click sent two debits for the same order. Mint charges once — the second ' +
-              'request blocks on the row lock and then answers 409 (mint/src/orders.ts:114) — but ' +
+              'request blocks on the row lock and then answers 409 (mint/src/orders.ts) — but ' +
               'the 409 is what this screen renders, so the customer is told their payment failed ' +
               'underneath a confirmation that it succeeded.',
           )
@@ -219,8 +219,8 @@ describe('two clicks in one tick — Pay', () => {
         url: `${ORIGIN}/tokens/${fx.ORDER_ID}`,
         storage: fx.SIGNED_IN,
         routes: orderRoutes({
-          // The service's real answer to a duplicate: 409 `order_state` — `mint/src/server.ts:311`
-          // reached from `mint/src/orders.ts:114-116`. Stubbed as a function so the FIRST call
+          // The service's real answer to a duplicate: 409 `order_state` — `mint/src/server.ts`
+          // reached from `mint/src/orders.ts`. Stubbed as a function so the FIRST call
           // succeeds and only a SECOND one is refused, which is what the row lock produces.
           [`POST /v1/tokens/${fx.ORDER_ID}/pay`]: (_wire, n) =>
             n === 1
@@ -347,7 +347,7 @@ describe('two clicks in one tick — Deploy', () => {
             s.api.matching(`POST /v1/tokens/${fx.ORDER_ID}/deploy`).length,
             1,
             'one double click asked twice for a contract to be put on a chain. The enqueue is ' +
-              "onConflict: 'keep' (mint/src/server.ts:574-579) so one job runs, but the screen " +
+              "onConflict: 'keep' (mint/src/server.ts) so one job runs, but the screen " +
               'promises "Pressing this twice produces one run, not two" and it must not be the ' +
               'queue alone that makes that sentence true.',
           )
@@ -418,7 +418,7 @@ describe('two submits in one tick — Open the order', () => {
             s.api.matching('POST /v1/tokens').length,
             1,
             'one double submit opened two token orders. `POST /v1/tokens` is a plain insert ' +
-              '(mint/src/tokens.ts:315-334) with no conditional update and no idempotency key, so ' +
+              '(mint/src/tokens.ts) with no conditional update and no idempotency key, so ' +
               'nothing on the server collapses them: the customer lands on one order and the ' +
               'other sits in their launch list, awaiting_payment, forever.',
           )
@@ -460,7 +460,7 @@ describe('two clicks in one tick — Save the project page', () => {
             s.api.matching(`PUT /v1/tokens/${fx.ORDER_ID}/page`).length,
             1,
             'one double click sent two whole-document PUTs. A PUT of the whole document blanks ' +
-              'every field it omits (mint/src/server.ts:601-611), so two of them racing is two ' +
+              'every field it omits (mint/src/server.ts), so two of them racing is two ' +
               "writers for one project page and the later one wins whatever it happened to hold.",
           )
         },

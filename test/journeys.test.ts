@@ -14,7 +14,7 @@
  *
  * **Deploy answers 202. It does not deploy.** `POST /v1/tokens/:id/deploy` authenticates, checks
  * the allowlist, runs one conditional UPDATE, enqueues a job and returns a `Location`
- * (`mint/src/server.ts:542`). A screen that says "deployed" because a button returned has told a
+ * (`mint/src/server.ts`). A screen that says "deployed" because a button returned has told a
  * customer their contract exists at a moment when nothing has been broadcast. BJ-CRE-04 asserts
  * the word on the screen after the 202, and BJ-CRE-05 asserts that the truth arrives from a
  * re-read rather than from the acknowledgement.
@@ -91,7 +91,7 @@ describe('BJ-CRE — Forge Create', () => {
         }
         // With its cost, in the unit the response states it in. The price is a projection of the
         // committed contracts, not a list somebody maintains, so it comes off the response —
-        // `priceUsdCents: '2500'` is $25.00 (`mint/src/server.ts:377-383`), and the settlement
+        // `priceUsdCents: '2500'` is $25.00 (`mint/src/server.ts`), and the settlement
         // asset is read from the body too rather than being spelled out here. Asserting the
         // FORMATTED dollar figure and not the raw integer is deliberate: `2500` on screen would
         // satisfy a bare digit check while meaning cents, Shards or nothing at all.
@@ -114,7 +114,7 @@ describe('BJ-CRE — Forge Create', () => {
       { url: `${ORIGIN}/`, routes: { 'GET /v1/catalogue': { body: fx.catalogue() } } },
       async (s) => {
         // `cap` is 'required' or 'forbidden' and there is no third option
-        // (`mint/src/catalogue.ts:36`). A customer who does not learn that here learns it after
+        // (`mint/src/catalogue.ts`). A customer who does not learn that here learns it after
         // paying.
         assert.match(s.text(), /cap/i, 'the cap rule is not on the catalogue at all')
       },
@@ -170,7 +170,7 @@ describe('BJ-CRE — Forge Create', () => {
         assert.ok(posted, 'the launch form sent nothing')
         const body = posted.json as Record<string, unknown>
         // The client-request assertion: what was typed is what was sent. `supply` reaches the
-        // constructor UNSCALED (`ForgeTokens.sol:38`), so a client that rescaled it here would
+        // constructor UNSCALED (`ForgeTokens.sol`), so a client that rescaled it here would
         // mint a different number of tokens from the one on screen.
         assert.equal(body['name'], draft.name)
         assert.equal(body['symbol'], draft.symbol)
@@ -418,7 +418,7 @@ describe('BJ-CRE — Forge Create', () => {
         await s.type(network, 'mainnet')
 
         // Words, not a bare disabled control. The check happens at DEPLOY — after payment
-        // (`mint/src/server.ts:560-569`) — so the only place a customer can act on it is here.
+        // (`mint/src/server.ts`) — so the only place a customer can act on it is here.
         assert.match(s.text(), /allowlisted/i, 'choosing mainnet says nothing about the allowlist')
         assert.match(s.text(), /after payment|before paying/i, 'the ORDER of the two is the point')
         assert.ok(

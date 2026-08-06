@@ -33,7 +33,7 @@ export function Fact({ label, children }: { label: string; children: ReactNode }
 /**
  * A value that may be absent, where absence is a real answer rather than a rendering problem.
  *
- * `missing` is the SENTENCE, not a dash. `mint/src/projectpages.ts:153-154`: "'We have not
+ * `missing` is the SENTENCE, not a dash. `mint/src/projectpages.ts`: "'We have not
  * observed this' and 'this is false' are different statements and a buyer is entitled to the
  * difference."
  */

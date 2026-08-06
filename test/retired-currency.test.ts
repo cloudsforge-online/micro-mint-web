@@ -20,9 +20,9 @@
  * ── WHY IT READS RENDERED TEXT AND NEVER SOURCE ────────────────────────────────────────────────
  *
  * A grep over `src/` would match this file's own header, and match the comment at
- * `src/lib/format.ts:238` that explains the wire field. It would be green because of its own
+ * `src/lib/format.ts` that explains the wire field. It would be green because of its own
  * justification, and it would STAY green if every sentence it protects were deleted. `site` states
- * the same rule at `site/test/estate-claims.test.ts:394-402` and counts five shipped instances of
+ * the same rule at `site/test/estate-claims.test.ts` and counts five shipped instances of
  * that failure — "an nginx header quoting the directive it forbids".
  *
  * So this mounts the real pages, with the real fixtures, and reads `screen.text()`. A comment
@@ -31,8 +31,8 @@
  *
  * ── WHY THE WORD LIST COMES FROM `contracts` ───────────────────────────────────────────────────
  *
- * `RETIRED_ASSETS` is exported from `contracts/packages/chain/src/index.ts:58`, and every consumer
- * resolves that package by `link:` at HEAD (its header, :45-47). Hardcoding /shards?/ here would
+ * `RETIRED_ASSETS` is exported from `contracts/packages/chain/src/index.ts`, and every consumer
+ * resolves that package by `link:` at HEAD (its header). Hardcoding /shards?/ here would
  * make a second list to keep current, and the next asset to be wound down would be caught by
  * `contracts` and missed by this file. Retiring an asset upstream now tightens this check with no
  * edit here.
@@ -47,7 +47,7 @@
  * When this file was written it was RED on four of six screens, and it was merged red. The
  * offending strings were TRUE: `micro-mint` had not migrated. It priced a deploy in Shards
  * (`MINT_DEPLOY_PRICE_SHARDS`), served that number as `priceShards`, and debited real SHARD from
- * the customer's ledger account (`mint/src/ledgerclient.ts:108-118`), while `micro-billing` and
+ * the customer's ledger account (`mint/src/ledgerclient.ts`), while `micro-billing` and
  * `micro-contracts` moved on 2026-08-04.
  *
  * So this surface could not be made green by relabelling. Printing "EMBER" over a charge the
@@ -56,14 +56,14 @@
  * receipt.
  *
  * It went green on 2026-08-05 because the SERVICE changed, which is the only thing that could
- * have made it go green honestly. `mint/src/migrations.ts:258` (migration 6,
+ * have made it go green honestly. `mint/src/migrations.ts` (migration 6,
  * `retire_shard_pricing`) makes an order durable in US cents and settled in EMBER — the shape
- * `billing/src/migrations.ts:543` already took — and `mint/src/server.ts:377-383` removed
+ * `billing/src/migrations.ts` already took — and `mint/src/server.ts` removed
  * `priceShards` from the wire rather than re-basing it. This bundle followed at `src/lib/mint.ts`
  * and `src/lib/format.ts`.
  *
  * One thing did NOT change, and it is the boundary: an order paid before the migration still
- * carries `chargeAssetCode: 'SHARD'` (`mint/src/server.ts:739-742`), and
+ * carries `chargeAssetCode: 'SHARD'` (`mint/src/server.ts`), and
  * `src/lib/format.ts`'s `charge()` renders that verbatim. That is a receipt for a debit that
  * really happened in SHARD, not a price anybody is being offered. The screens this file mounts are
  * the LIVE ones, quoted in USD and settled in EMBER; if a future fixture is added here that is
@@ -91,7 +91,7 @@ const here = (p: string) => fileURLToPath(new URL(`../${p}`, import.meta.url))
 
 /**
  * Where a micro-contracts checkout is, in the order CI and a developer's machine put it — the same
- * three candidates and the same order as `test/mint.test.ts:29-35`.
+ * three candidates and the same order as `test/mint.test.ts`.
  */
 const CONTRACTS_CANDIDATES = [
   process.env['CLOUDSFORGE_CONTRACTS_DIR'],
@@ -110,16 +110,16 @@ const chainSource = CONTRACTS_CANDIDATES.find((p) => existsSync(p))
  * with `link:../contracts/packages/chain` in package.json. That was written, and reverted, for a
  * reason worth recording so it is not re-attempted:
  *
- *   `Dockerfile:32` runs `pnpm install --frozen-lockfile`, and a `link:` specifier must resolve at
+ *   `Dockerfile` runs `pnpm install --frozen-lockfile`, and a `link:` specifier must resolve at
  *   IMAGE BUILD TIME whether or not anything in `src/` imports it. Adding the dependency therefore
- *   requires a second named build context (`COPY --from=chainpkg`, mirroring `uipkg` at :24), a new
+ *   requires a second named build context (`COPY --from=chainpkg`, mirroring `uipkg`), a new
  *   `--build-context` argument in the `image:` job, and the same in every local build command — so
  *   that the PRODUCTION IMAGE gains a build input for the sake of one test file. That is a large
  *   blast radius, and a deploy that fails because a test needed a constant is a bad trade.
  *
  * Reading the source is the same source of truth with none of that. It is also exactly the pattern
  * this repository already uses to check its route citations against the real service
- * (`test/mint.test.ts:29-35`), including the skip-with-a-name below.
+ * (`test/mint.test.ts`), including the skip-with-a-name below.
  *
  * The parse is deliberately narrow: it matches the ONE declaration and fails loudly rather than
  * falling back to a default, because a silent fallback here is a check that verifies nothing.
@@ -239,7 +239,7 @@ const SURFACES: readonly {
   },
   {
     // The address is `/projects/<id>` and the route it reads is `/v1/tokens/<id>/page`
-    // (`src/lib/mint.ts:360`). They differ, and a fixture keyed on the ADDRESS renders the failure
+    // (`src/lib/mint.ts`). They differ, and a fixture keyed on the ADDRESS renders the failure
     // branch — which is what the length guard below caught when this entry was first written.
     name: 'the public project page',
     element: atRoute('/projects/:id', h(ProjectPage), `/projects/${fx.ORDER_ID}`),
@@ -273,7 +273,7 @@ const SURFACES: readonly {
 describe('retired currency never reaches a screen', () => {
   if (chainSource === undefined) {
     // NOT a silent pass. It says which check did not run, and CI makes the absence fatal — the
-    // same contract `test/mint.test.ts:85` has with the workflow.
+    // same contract `test/mint.test.ts` has with the workflow.
     it('SKIPPED: no micro-contracts checkout — CI checks one out and requires this to run', () => {
       assert.ok(true)
     })
@@ -309,9 +309,9 @@ describe('retired currency never reaches a screen', () => {
               hit,
               null,
               `${surface.name} renders "${hit?.[0]}" — ${code} is retired ` +
-                `(contracts/packages/chain/src/index.ts:58). Forge Create quotes in US cents and ` +
+                `(contracts/packages/chain/src/index.ts). Forge Create quotes in US cents and ` +
                 `settles in EMBER, displayed in Sparks when the service supplies them ` +
-                `(mint/src/migrations.ts:258, mint/src/server.ts:745-750). Before reaching for the ` +
+                `(mint/src/migrations.ts, mint/src/server.ts). Before reaching for the ` +
                 `copy: check what the SERVICE sent. This screen said Shards for a day after the ` +
                 `asset was retired, and it was telling the truth — the fix was migrating ` +
                 `micro-mint, not editing the sentence. If the word is true again, it is true ` +

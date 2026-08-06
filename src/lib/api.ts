@@ -105,8 +105,8 @@ export class ApiError extends Error {
  * Pull the sentence, the code and the request id out of a service's error body.
  *
  * The estate's envelope is **nested** — `{error: {code, message, requestId}}`, built by
- * `errorReply()` in every service (`hub-api/src/server.ts:589`, `identity/src/server.ts:1970`,
- * `service-template/src/server.ts:341`). This function used to read it as flat, assigning
+ * `errorReply()` in every service (`hub-api/src/server.ts`, `identity/src/server.ts`,
+ * `service-template/src/server.ts`). This function used to read it as flat, assigning
  * `data.error` — an object — straight to the displayed message. Every server-side failure in
  * every app cut from this template would have rendered as `[object Object]`, with the real
  * message, the code and the request id all present in the response and all discarded. The
@@ -258,8 +258,8 @@ export interface RequestOptions {
    * Kept, and unused by this app. **No route on `mint` requires an `Idempotency-Key`**: there is no
    * `withIdempotentRoute` wrapper and no header read anywhere in `mint/src/server.ts`, and the two
    * mutations that need protection get it from state instead — `pay` runs one conditional UPDATE
-   * guarded by `and status = 'awaiting_payment'` (`mint/src/tokens.ts:326-332`) and `deploy`
-   * enqueues with `onConflict: 'keep'` (`mint/src/server.ts:574-579`). See src/lib/mint.ts.
+   * guarded by `and status = 'awaiting_payment'` (`mint/src/tokens.ts`) and `deploy`
+   * enqueues with `onConflict: 'keep'` (`mint/src/server.ts`). See src/lib/mint.ts.
    *
    * `authorization` and `content-type` are set by this function AFTER these are spread, so a
    * caller cannot accidentally drop the bearer token by passing a header map of its own.

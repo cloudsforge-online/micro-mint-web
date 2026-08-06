@@ -22,7 +22,7 @@ import {
 } from '../src/lib/format.ts'
 import { TOKEN_STATUSES, type AttemptOutcome, type RiskIndicators } from '../src/lib/mint.ts'
 
-/** Every outcome `mint/src/tokens.ts:670-677` declares. */
+/** Every outcome `mint/src/tokens.ts` declares. */
 const OUTCOMES: readonly AttemptOutcome[] = [
   'signed',
   'broadcast',
@@ -34,7 +34,7 @@ const OUTCOMES: readonly AttemptOutcome[] = [
 ]
 
 describe('every state has a word, a glyph and a sentence', () => {
-  it('covers all eight order states — mint/src/tokens.ts:38-49', () => {
+  it('covers all eight order states — mint/src/tokens.ts', () => {
     assert.equal(TOKEN_STATUSES.length, 8)
     for (const status of TOKEN_STATUSES) {
       const tone = statusTone(status)
@@ -59,7 +59,7 @@ describe('every state has a word, a glyph and a sentence', () => {
   })
 
   it('says a failed launch will not be retried, in the service’s own words', () => {
-    // `mint/src/server.ts:551`, and `CLAIMABLE` at `tokens.ts:68-73`. A customer told only "failed"
+    // `mint/src/server.ts`, and `CLAIMABLE` at `tokens.ts`. A customer told only "failed"
     // will wait for a retry that a background job deliberately never performs.
     assert.match(statusTone('failed').meaning, /will not be retried automatically/)
   })
@@ -205,7 +205,7 @@ describe('ids, hashes and amounts', () => {
 
   /**
    * The service returns null for `chargeAmountSparks` whenever the wei do not divide by 10^12, and
-   * this must NOT round into that null. `mint/src/pricingclient.ts:74-84`: "printing a rounded
+   * this must NOT round into that null. `mint/src/pricingclient.ts`: "printing a rounded
    * figure would show a price that is not the price". The exact wei is long and correct, and a
    * customer reconciling their ledger needs the figure that is actually in it.
    */
@@ -222,7 +222,7 @@ describe('ids, hashes and amounts', () => {
   /**
    * An order paid before 2026-08-05 was charged real SHARD and says so.
    *
-   * `mint/src/server.ts:739-742` keeps `chargeAssetCode: 'SHARD'` on the wire for exactly these
+   * `mint/src/server.ts` keeps `chargeAssetCode: 'SHARD'` on the wire for exactly these
    * rows, because "the alternative is printing EMBER over a charge the ledger records as SHARD,
    * which is a false statement about money". This renders what it is given. The live surface is
    * quoted in USD and settled in EMBER, which is what `test/retired-currency.test.ts` reads.

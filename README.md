@@ -12,9 +12,9 @@ polls while a deploy runs, and the public project page a prospective buyer reads
 bundle served by nginx and nothing else — no server, no session store, no database.
 
 > **This bundle enforces nothing, and none of its refusals are a boundary.** `mint` verifies the
-> bearer on every route that needs one (`authenticate`, `mint/src/server.ts:671`), and `ownedToken`
+> bearer on every route that needs one (`authenticate`, `mint/src/server.ts`), and `ownedToken`
 > answers **404** for another customer's order — the same answer as "no such order", deliberately,
-> so that order ids cannot be enumerated (`mint/src/server.ts:625-626`). What this app contributes
+> so that order ids cannot be enumerated (`mint/src/server.ts`). What this app contributes
 > is that a screen offers what the service will actually accept, and says why when it will not.
 >
 > It also **stores no environment**. There is no `.env`, no `define`, no `envPrefix` and no
@@ -25,20 +25,21 @@ bundle served by nginx and nothing else — no server, no session store, no data
 
 ## The API surface it calls
 
-Read out of `mint/src/server.ts`, one route at a time. **The line numbers are checked mechanically,
-not trusted**: `test/mint.test.ts` reads the sibling checkout and fails if any route is not
-registered at the line cited here, and CI fails if that cross-check did not run.
+Read out of `mint/src/server.ts`, one route at a time. **The surface is checked mechanically, not
+trusted**: `test/mint.test.ts` reads the sibling checkout and fails if any route below is not
+registered there, and CI fails if that cross-check did not run. It searches for each route rather
+than citing a line, because a line names a position in a file this repository does not own.
 
 | Method | Path | Authenticates | Idempotency-Key | What it does | Verified at |
 | --- | --- | --- | --- | --- | --- |
-| `GET` | `/v1/catalogue` | **no** | — | the three contracts and the Shards price | `mint/src/server.ts:354` |
-| `POST` | `/v1/tokens` | yes | — | opens an order; charges nothing, deploys nothing | `mint/src/server.ts:373` |
-| `GET` | `/v1/tokens` | yes | — | the caller's launches, newest first, at most 100 | `mint/src/server.ts:441` |
-| `GET` | `/v1/tokens/:id` | yes | — | one order and every deploy attempt | `mint/src/server.ts:454` |
-| `POST` | `/v1/tokens/:id/pay` | yes | — | debits Shards; **201** fresh, **200** replayed | `mint/src/server.ts:478` |
-| `POST` | `/v1/tokens/:id/deploy` | yes | — | **202 and a status URL. Reaches no chain.** | `mint/src/server.ts:515` |
-| `PUT` | `/v1/tokens/:id/page` | yes | — | replaces the whole project-page document | `mint/src/server.ts:570` |
-| `GET` | `/v1/tokens/:id/page` | **no** | — | the public project page, chain facts included | `mint/src/server.ts:596` |
+| `GET` | `/v1/catalogue` | **no** | — | the three contracts and the Shards price | `mint/src/server.ts` |
+| `POST` | `/v1/tokens` | yes | — | opens an order; charges nothing, deploys nothing | `mint/src/server.ts` |
+| `GET` | `/v1/tokens` | yes | — | the caller's launches, newest first, at most 100 | `mint/src/server.ts` |
+| `GET` | `/v1/tokens/:id` | yes | — | one order and every deploy attempt | `mint/src/server.ts` |
+| `POST` | `/v1/tokens/:id/pay` | yes | — | debits Shards; **201** fresh, **200** replayed | `mint/src/server.ts` |
+| `POST` | `/v1/tokens/:id/deploy` | yes | — | **202 and a status URL. Reaches no chain.** | `mint/src/server.ts` |
+| `PUT` | `/v1/tokens/:id/page` | yes | — | replaces the whole project-page document | `mint/src/server.ts` |
+| `GET` | `/v1/tokens/:id/page` | **no** | — | the public project page, chain facts included | `mint/src/server.ts` |
 
 **Two of them make no `authenticate()` call**, and this client sends no bearer to either
 (`auth: false` in `src/lib/mint.ts`). That is not a nicety: the estate has already shipped a client
@@ -49,15 +50,15 @@ service's own handler bodies, in `test/mint.test.ts`.
 **No route on mint requires an `Idempotency-Key`.** There is no `withIdempotentRoute` wrapper and no
 header read anywhere in the service — unlike four wallet routes and five market mutations, which
 answer 400 without one. Mint gets the same protection from state: `pay` runs one conditional UPDATE
-guarded by `and status = 'awaiting_payment'` (`mint/src/tokens.ts:326-332`) and `deploy` enqueues
-with `onConflict: 'keep'` (`mint/src/server.ts:547-552`). `test/mint.test.ts` asserts the absence, so
+guarded by `and status = 'awaiting_payment'` (`mint/src/tokens.ts`) and `deploy` enqueues
+with `onConflict: 'keep'` (`mint/src/server.ts`). `test/mint.test.ts` asserts the absence, so
 nobody "fixes" this client by adding a header the service ignores.
 
 ### The 202 is the most important thing on this list
 
 `POST /v1/tokens/:id/deploy` authenticates, checks the mainnet allowlist, runs one conditional
 UPDATE, enqueues a job and returns a `Location` header. It reaches no chain. The service's own file
-header (`mint/src/server.ts:8-23`) explains why the work cannot live inside the request: a rolling
+header (`mint/src/server.ts`) explains why the work cannot live inside the request: a rolling
 deploy, Cloudflare's 100-second origin timeout and a client that gives up can each land between the
 broadcast and the write that records the transaction hash, orphaning a real contract and deploying
 a second one.
@@ -96,9 +97,9 @@ project page somebody was *sent*.
 `POST /v1/tokens` validated the FEATURE SET (`variantFor`) and never looked at the cap; the cap was
 first checked by `constructorArgs`, inside the deploy job, after payment. So ordering a pausable
 token with no cap was accepted, payable, and then unbuildable. Mint now refuses it at the order
-route: `assertBuildable` (`mint/src/catalogue.ts:179`, called at `mint/src/server.ts:412`) runs the
+route: `assertBuildable` (`mint/src/catalogue.ts`, called at `mint/src/server.ts`) runs the
 deploy path's own `variantFor` and `constructorArgs` against the request and answers **400
-`unbuildable_order`** with the offending `field` in the error body (`mint/src/server.ts:299`).
+`unbuildable_order`** with the offending `field` in the error body (`mint/src/server.ts`).
 
 So `src/lib/launch.ts`'s cap check is now an ordinary mirror, kept for the same reason as every
 other rule in that file — the customer sees the message next to the input instead of after a round
@@ -116,7 +117,7 @@ a form that says no.
 ## The supply unit, which is the trap in this product
 
 `supply` reaches the contract constructor **unscaled** — `_mint(recipient_, initialSupply_)` in all
-three contracts (`mint/src/contracts/ForgeTokens.sol:38`, `:58`, `:83`). `decimals` is a separate
+three contracts (`mint/src/contracts/ForgeTokens.sol`). `decimals` is a separate
 constructor argument that only changes how a wallet *displays* a balance.
 
 So `1000000` with 18 decimals is not a million tokens; it is 0.000000000001 of one, permanently, on
@@ -127,7 +128,7 @@ rather than applying it. This app does not get to decide what somebody's token s
 
 ## The project page never renders the order record
 
-04-domain-model §5.3, implemented at `mint/src/projectpages.ts:1-21`: supply, authorities, network
+04-domain-model §5.3, implemented at `mint/src/projectpages.ts`: supply, authorities, network
 and contract address come from the **indexer**. The order says what the customer asked for at the
 moment they paid; the chain says what is true now, and the two diverge the instant an owner mints
 past the order or pauses transfers.
@@ -159,8 +160,8 @@ pnpm build
 ```
 
 **Start `mint` on port 4004, not its default 4000.** The surface registry gives `create`
-`devPort: 4004` (`ui/packages/ui/src/surfaces.ts:214-225`) and that is the port this bundle calls on
-localhost; `mint/src/env.ts:251` defaults `PORT` to 4000 and `mint/.env.example:38` sets it to 4000.
+`devPort: 4004` (`ui/packages/ui/src/surfaces.ts`) and that is the port this bundle calls on
+localhost; `mint/src/env.ts` defaults `PORT` to 4000 and `mint/.env.example` sets it to 4000.
 So:
 
 ```bash
@@ -203,7 +204,7 @@ relative path, and asserted. The og metadata is declared exactly once, which is 
 The web template's Dockerfile once did not copy `public/` into the build context, so every frontend
 cut from it built an image whose `dist/` had no icons — while a brand test exactly like this one
 passed, because it reads the source tree. Four frontends shipped that way. **It is fixed upstream**
-(`micro-web-template/Dockerfile:39`) and every frontend in the estate carries the line, so the
+(`micro-web-template/Dockerfile`) and every frontend in the estate carries the line, so the
 guard here is a guard rather than a correction; it was re-checked against the source for this
 repository rather than inherited from a sibling's comment, because that claim had already gone
 stale in `micro-admin-web`.
@@ -216,19 +217,19 @@ page.
 
 ## Known gaps
 
-- **`GET /v1/tokens` takes no cursor** and returns at most 100 rows (`mint/src/server.ts:446`), so
+- **`GET /v1/tokens` takes no cursor** and returns at most 100 rows (`mint/src/server.ts`), so
   older launches cannot be listed. The list says so when it is full rather than stopping silently at
   a round number.
 - **The project-page editor edits two of six fields.** `links`, `team` and `roadmap` are structured
   entries; the form sends `[]` for them, which is what the handler stores for an absent value anyway
-  (`mint/src/server.ts:578-581`), and the panel says the save replaces the whole document. A partial
+  (`mint/src/server.ts`), and the panel says the save replaces the whole document. A partial
   PUT would silently blank them, which is why they are sent explicitly rather than omitted.
 - **`verificationStatus` is displayed and not actionable.** Claiming or verifying a project is
   market's surface, not this one.
 - **Two defects this repository was briefed to correct were already fixed**, and are recorded here
   rather than repeated as live: the web template reads `/auth/me` nested
-  (`micro-web-template/src/lib/auth.tsx:26-32`, `:98-99`) and copies `public/`
-  (`micro-web-template/Dockerfile:39`), and hub-web, site, foresight-web, foresight-admin-web and
+  (`micro-web-template/src/lib/auth.tsx`, `:98-99`) and copies `public/`
+  (`micro-web-template/Dockerfile`), and hub-web, site, foresight-web, foresight-admin-web and
   market-web all match on both. `micro-admin-web`'s comments still describe them as open. Every
   citation in this README was re-read against source for that reason.
 - **`foresight-web/index.html` declares `og:type`, `og:title` and `og:description` twice**
