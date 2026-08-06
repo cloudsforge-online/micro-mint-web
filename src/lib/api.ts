@@ -105,8 +105,8 @@ export class ApiError extends Error {
  * Pull the sentence, the code and the request id out of a service's error body.
  *
  * The estate's envelope is **nested** — `{error: {code, message, requestId}}`, built by
- * `errorReply()` in every service (`hub-api/src/server.ts:682`, `identity/src/server.ts:1512`,
- * `service-template/src/server.ts:372`). This function used to read it as flat, assigning
+ * `errorReply()` in every service (`hub-api/src/server.ts:589`, `identity/src/server.ts:1970`,
+ * `service-template/src/server.ts:341`). This function used to read it as flat, assigning
  * `data.error` — an object — straight to the displayed message. Every server-side failure in
  * every app cut from this template would have rendered as `[object Object]`, with the real
  * message, the code and the request id all present in the response and all discarded. The
