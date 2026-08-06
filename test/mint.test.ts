@@ -41,14 +41,14 @@ const mintServer = MINT_CANDIDATES.find((p) => existsSync(p))
  * wrong, the test fails and names it — which is the property a comment does not have.
  */
 const SURFACE: ReadonlyArray<{ method: string; path: string; line: number; authenticates: boolean }> = [
-  { method: 'GET', path: '/v1/catalogue', line: 358, authenticates: false },
-  { method: 'POST', path: '/v1/tokens', line: 384, authenticates: true },
-  { method: 'GET', path: '/v1/tokens', line: 452, authenticates: true },
-  { method: 'GET', path: '/v1/tokens/:id', line: 465, authenticates: true },
-  { method: 'POST', path: '/v1/tokens/:id/pay', line: 489, authenticates: true },
-  { method: 'POST', path: '/v1/tokens/:id/deploy', line: 526, authenticates: true },
-  { method: 'PUT', path: '/v1/tokens/:id/page', line: 581, authenticates: true },
-  { method: 'GET', path: '/v1/tokens/:id/page', line: 607, authenticates: false },
+  { method: 'GET', path: '/v1/catalogue', line: 374, authenticates: false },
+  { method: 'POST', path: '/v1/tokens', line: 400, authenticates: true },
+  { method: 'GET', path: '/v1/tokens', line: 468, authenticates: true },
+  { method: 'GET', path: '/v1/tokens/:id', line: 481, authenticates: true },
+  { method: 'POST', path: '/v1/tokens/:id/pay', line: 505, authenticates: true },
+  { method: 'POST', path: '/v1/tokens/:id/deploy', line: 542, authenticates: true },
+  { method: 'PUT', path: '/v1/tokens/:id/page', line: 597, authenticates: true },
+  { method: 'GET', path: '/v1/tokens/:id/page', line: 623, authenticates: false },
 ]
 
 const client = readFileSync(here('src/lib/mint.ts'), 'utf8')
