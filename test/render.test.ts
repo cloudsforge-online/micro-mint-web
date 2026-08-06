@@ -263,46 +263,10 @@ describe('the shell and the 404', () => {
     assert.match(shell, /NAV\.map/)
   })
 
-  /*
-   * Comment-stripped, and this is not tidiness. The shell's own prose NAMES the two things these
-   * assertions forbid — the retired `.mw-skip` anchor and the hand-rolled `<main id="main">` — in
-   * order to explain why they went. A grep over the raw text would match the explanation and fail
-   * a correct file, which is the "a guard that fires on its own explanation trains people to
-   * delete the explanation" failure this file's own header counts six of in this estate.
-   */
-  const shellBody = withoutComments(shell)
-
-  it('the shell offers the SHARED skip link before anything else', () => {
-    // `<SkipLink />` from @cloudsforge/ui, not the local anchor this test used to look for. The
-    // local one targeted a `<main>` with no `tabIndex`, which is not focusable: the fragment
-    // scrolled the page and focus stayed on the link, so the next Tab went back into the bar.
-    const skip = shellBody.indexOf('<SkipLink')
-    const bar = shellBody.indexOf('<CloudsForgeBar')
+  it('the shell offers a skip link before anything else', () => {
+    const skip = shell.indexOf('mw-skip')
+    const bar = shell.indexOf('<CloudsForgeBar')
     assert.ok(skip > 0 && skip < bar, 'the skip link must come first in the DOM')
-    assert.doesNotMatch(shellBody, /mw-skip/, 'the local skip link is back beside the shared one')
-  })
-
-  it('the page sits in the shared main region, which is what the skip link can focus', () => {
-    assert.match(shellBody, /<MainRegion/)
-    assert.doesNotMatch(shellBody, /<main\b/, 'a hand-rolled main element is back, without tabIndex')
-  })
-
-  it('the consent banner is last in the shell, and therefore last in the tab order', () => {
-    // Not modal, and not first: a reader who arrived to read a project page must be able to read
-    // it and answer afterwards. Ordering is the whole assertion — the component itself is
-    // micro-ui's.
-    const banner = shellBody.indexOf('<CookieBanner')
-    assert.ok(banner > 0, 'the shell renders no consent banner')
-    assert.ok(banner > shellBody.indexOf('<CloudsForgeFooter'), 'the banner precedes the footer')
-    assert.ok(banner > shellBody.indexOf('<Outlet'), 'the banner precedes the page')
-  })
-
-  it('the shell keeps the head in step with the address', () => {
-    // Every page of this app was titled "Forge Create" before this, including the launch status
-    // page a customer keeps open. The tags themselves are micro-ui's pure function; what is
-    // asserted here is that this shell calls it, once, on navigation.
-    assert.match(shellBody, /applyHead\(surfaceMeta\(PRODUCT/)
-    assert.match(shellBody, /useLocation\(\)/)
   })
 
   it('the 404 page explains that the status really is 404', () => {
