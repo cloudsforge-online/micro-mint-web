@@ -275,24 +275,16 @@ body {
 /* ----------------------------- chrome ------------------------------ */
 
 /*
- * The skip link. Off-screen until focused, then the first thing on the page — the launch form is
- * long and a keyboard user should not have to tab the navigation to reach it.
+ * THE SKIP LINK USED TO BE HERE, AS `.mw-skip`, AND IT IS NOW `.cf-skip` IN ui.css.
+ *
+ * The rule it replaced was `left: -9999px` until `:focus-visible`, targeting `#main` — a `<main>`
+ * with no `tabIndex`, which is not focusable, so the fragment scrolled the page and left focus on
+ * the link. The shared `SkipLink` and `MainRegion` fix the half that was broken as well as the
+ * half that was duplicated; see the note in src/components/shell.tsx.
+ *
+ * Nothing replaces this block. A local override of `.cf-skip` would be this repository having a
+ * second opinion about the one control every surface in the estate now shares.
  */
-.mw-skip {
-  position: absolute;
-  left: -9999px;
-  top: 0;
-  z-index: 100;
-  padding: var(--cf-space-sm) var(--cf-space-lg);
-  background: var(--cf-accent);
-  color: var(--cf-ash-900);
-  font-weight: 600;
-  border-radius: 0 0 var(--cf-radius-sm) 0;
-}
-
-.mw-skip:focus-visible {
-  left: 0;
-}
 
 /* ------------------------------ heads ------------------------------ */
 

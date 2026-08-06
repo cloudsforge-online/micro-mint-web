@@ -30,10 +30,15 @@
  */
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { AccountMenu, CloudsForgeBar, ProductSwitcher } from '@cloudsforge/ui'
+import { AccountMenu, CloudsForgeBar, MAIN_ID, ProductSwitcher } from '@cloudsforge/ui'
 import { createElement as h } from 'react'
+import { App } from '../src/app.tsx'
 import { PRODUCT } from '../src/lib/hosts.ts'
+import * as fx from './fixtures.ts'
 import { withScreen, type Screen } from './dom.ts'
+
+/** The address this surface is served from, so `cloudsforgeHosts()` resolves the real apex. */
+const ORIGIN = 'https://create.cloudsforge.online'
 
 /**
  * `allowEmpty` because the subject is a strip of chrome, not a page: the bar's own text is well
@@ -102,5 +107,116 @@ test('ProductSwitcher and AccountMenu also render standing alone', async () => {
   await withScreen(h(AccountMenu, { account: { signedIn: false } }), CHROME, async (s) => {
     s.byRole('button', 'Sign in')
     s.clean('AccountMenu alone')
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   The 1.1 chrome the shell adds: the skip link, the main region, the consent banner and the head.
+
+   These are asserted by MOUNTING THE APP rather than by reading src/components/shell.tsx, and the
+   distinction is the whole reason they are here rather than in render.test.ts. Every one of them
+   is a property that a correct-looking source file can get wrong:
+
+     - a skip link whose target is not focusable scrolls and leaves focus behind, which is what
+       this surface shipped — `<main id="main">` with no `tabIndex`, and the anchor pointing at it;
+     - a head applied in a component that never mounts applies nothing;
+     - a consent banner that renders where analytics cannot report is a banner asking permission
+       for something that will not happen, and one that renders BEFORE the page is a focus problem.
+
+   Source text proves none of those four. A document does.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+const CATALOGUE = { 'GET /v1/catalogue': { body: fx.catalogue() } } as const
+
+test('the skip link is first, and its target is a main region that can take focus', async () => {
+  await withScreen(h(App), { url: `${ORIGIN}/`, routes: { ...CATALOGUE } }, async (s) => {
+    await s.settle(20)
+
+    const skip = s.tabbables()[0]
+    assert.ok(skip, 'nothing is tabbable at all')
+    assert.equal(skip.tagName, 'A', 'the first tabbable is not a link')
+    assert.equal(skip.getAttribute('href'), `#${MAIN_ID}`, 'the skip link points somewhere else')
+
+    // The half that was broken rather than merely duplicated. A <main> is not focusable by
+    // default, so without this the fragment scrolls the page and the next Tab returns to the bar.
+    const main = s.document.getElementById(MAIN_ID)
+    assert.ok(main, `the skip link targets #${MAIN_ID}, which is not in the document`)
+    assert.equal(main.tagName, 'MAIN')
+    assert.equal(main.getAttribute('tabindex'), '-1', 'the main region cannot take focus')
+    assert.equal(s.allByRole('main').length, 1, 'a page has exactly one main landmark')
+
+    s.clean('the shell, at the catalogue')
+  })
+})
+
+test('the head follows the address rather than staying on the shell’s title', async () => {
+  await withScreen(h(App), { url: `${ORIGIN}/`, routes: { ...CATALOGUE } }, async (s) => {
+    await s.settle(20)
+
+    /*
+     * The index route deliberately takes no page title, so this is the bare surface name — which
+     * is byte-for-byte what index.html carries. The one drift this arrangement can produce is the
+     * shell and the application disagreeing about the front page, and that is the failure `site`
+     * records having shipped: a sentence the owner had asked to have removed stayed in every
+     * search result and social card until somebody opened the served HTML rather than the page.
+     */
+    assert.equal(s.document.title, 'Forge Create')
+
+    const content = (selector: string): string =>
+      s.document.head.querySelector(selector)?.getAttribute('content') ?? ''
+
+    // Composed against the serving origin, never a hostname typed into the bundle.
+    assert.equal(
+      s.document.head.querySelector('link[rel="canonical"]')?.getAttribute('href'),
+      `${ORIGIN}/`,
+    )
+    assert.equal(content('meta[property="og:url"]'), `${ORIGIN}/`)
+    assert.equal(content('meta[property="og:image"]'), `${ORIGIN}/og-1200x630.png`)
+
+    // Public, and invited: the catalogue is the address a stranger arrives at, and nginx.conf
+    // lists exactly this one in the sitemap. The two must not disagree.
+    assert.match(content('meta[name="robots"]'), /^index, follow/)
+
+    // The description is derived from the surface registry, so it cannot name a retired asset by
+    // accident. Asserted rather than assumed, because the static copy in index.html did.
+    assert.doesNotMatch(content('meta[name="description"]'), /\bSHARD/i)
+    assert.equal(content('meta[property="og:description"]'), content('meta[name="description"]'))
+
+    s.clean('the head, at the catalogue')
+  })
+})
+
+test('an address this app does not own is titled as such, and tells crawlers to stay away', async () => {
+  // nginx answers a real 404 for it; the head should not then invite indexing of the page the
+  // reader is looking at. Both halves of the same honesty.
+  await withScreen(h(App), { url: `${ORIGIN}/nothing-here`, routes: {} }, async (s) => {
+    await s.settle(20)
+    assert.equal(s.document.title, 'Not found — Forge Create')
+    assert.match(
+      s.document.head.querySelector('meta[name="robots"]')?.getAttribute('content') ?? '',
+      /^noindex/,
+    )
+  })
+})
+
+test('the consent banner does not appear where analytics cannot report', async () => {
+  /*
+   * `CookieBanner` renders nothing when the shell carries no measurement ID and nothing on an
+   * origin analytics would not report from. This harness's document has no `cf-analytics` meta —
+   * it mounts components, not index.html — which is exactly the shape of a local `pnpm dev`.
+   *
+   * The assertion is that no cookie dialog is drawn AND, more importantly, that nothing was
+   * fetched and no analytics cookie was set. A banner is the visible half of the rule; the rule
+   * is that consent precedes storage.
+   */
+  await withScreen(h(App), { url: `${ORIGIN}/`, routes: { ...CATALOGUE } }, async (s) => {
+    await s.settle(20)
+    assert.equal(s.document.querySelector('[role="dialog"]'), null, 'a banner with nothing to ask')
+    assert.doesNotMatch(s.document.cookie, /_ga/, 'an analytics cookie was set without consent')
+    assert.equal(
+      s.document.querySelector('script[src*="googletag" i]'),
+      null,
+      'an analytics tag was injected without a click on Accept',
+    )
   })
 })

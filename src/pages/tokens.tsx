@@ -91,7 +91,11 @@ export function TokensPage() {
                     <td>
                       <StateBadge tone={statusTone(token.status)} />
                     </td>
-                    <td>{timestamp(token.createdAt)}</td>
+                    {/* `cf-num` for the same reason the supply above carries it: this is a column
+                        of digits read down rather than across, and proportional figures make the
+                        dates in it ragged. The class is the design system's tabular-numerals rule
+                        — never a local `font-variant-numeric`. */}
+                    <td className="cf-num">{timestamp(token.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>

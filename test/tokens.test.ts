@@ -113,9 +113,26 @@ describe('the stylesheet names only tokens that exist', () => {
       }
     })
 
-    it('the four names the brief warned about are not tokens, and the real ones are', () => {
-      // Asserted in both directions so a reader can see which is which without opening tokens.css.
-      for (const wrong of ['--cf-border', '--cf-critical', '--cf-warning', '--cf-font']) {
+    it('the names the brief warned about are not tokens, and the real ones are', () => {
+      /*
+       * ── `--cf-critical` WAS ON THIS LIST AND HAS BEEN TAKEN OFF IT ────────────────────────────
+       *
+       * Design system 1.1 defines it (`ui/packages/ui/src/tokens.css:360`), so this assertion had
+       * been failing at baseline. The neighbouring check three lines up anticipated exactly that
+       * case — "if one had quietly appeared upstream, this list would need REVISING rather than
+       * enforcing" — and this is the revision, not a deletion of the point.
+       *
+       * The point survives intact below, because it was never "the name does not exist". It was
+       * "the name you want for TEXT is not this one". 1.1 splits every severity into a non-text
+       * step and a text step: `--cf-critical` is #d2543a, which measures 3.38:1 and clears the 3:1
+       * non-text floor a border needs and nothing more; `--cf-critical-text` is #f86546 at 4.63:1,
+       * which is the one that may be set as `color:`. Two surfaces in this estate were already
+       * setting text in the non-text step, which is why the split exists.
+       *
+       * So the wrong-name list keeps the three that genuinely do not exist, and the text/non-text
+       * pairing is asserted directly underneath it.
+       */
+      for (const wrong of ['--cf-border', '--cf-warning', '--cf-font']) {
         assert.ok(!defined.has(wrong), `${wrong} is defined after all; this comment is wrong`)
       }
       for (const right of [
@@ -127,6 +144,27 @@ describe('the stylesheet names only tokens that exist', () => {
       ]) {
         assert.ok(defined.has(right), `${right} is not defined; the stylesheet is built on it`)
       }
+    })
+
+    it('every severity carries a non-text step AND a text step, and they are different names', () => {
+      // The rule that replaced "--cf-critical does not exist". A `color:` takes the `-text` step;
+      // a border or a background takes the bare one.
+      for (const level of ['good', 'warn', 'critical']) {
+        assert.ok(defined.has(`--cf-${level}`), `--cf-${level} is missing`)
+        assert.ok(defined.has(`--cf-${level}-text`), `--cf-${level}-text is missing`)
+      }
+    })
+
+    it('the two aliases this stylesheet sets text in point at the TEXT steps', () => {
+      /*
+       * `--cf-danger` and `--cf-success` survive as aliases of `--cf-critical-text` and
+       * `--cf-good-text` (tokens.css:390-391), deliberately: every existing `color: var(--cf-danger)`
+       * in the estate became AA-compliant without the repository using it being touched, and every
+       * existing border use kept clearing the non-text floor it needs. src/styles.css sets text in
+       * `--cf-danger` twice, so this is the assertion that keeps those two legible.
+       */
+      assert.match(tokens, /--cf-success:\s*var\(--cf-good-text\)/)
+      assert.match(tokens, /--cf-danger:\s*var\(--cf-critical-text\)/)
     })
   }
 })
