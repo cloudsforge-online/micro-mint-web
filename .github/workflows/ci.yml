@@ -48,13 +48,17 @@
 #     only of the optional `deep-link-path` input, a route the app really has.
 #
 # So the two things that made a bespoke `check:` and `image:` unavoidable are gone. This file is
-# still not deleted, because what remains is not a workaround: `rules:` (line 228 below) was
-# never claimed to be temporary — re-read the first line of this header, it names `check` and
+# still not deleted, because what remains is not a workaround: the `rules:` job below was never
+# claimed to be temporary — re-read the first line of this header, it names `check` and
 # `image` — and web-ci.yml has no input that could carry it. Its `runtime-hosts` job checks VITE_*,
 # build arguments, third-party analytics and the README. It cannot check
-#   that every route this client calls cites the line that serves it (line 285),
-#   that no act-as-anyone parameter (line 303),
-#   or that a project page never renders the order record (line 321).
+#   that every route this client calls names the service that serves it,
+#   that no act-as-anyone parameter reaches a customer bundle,
+#   or that a project page never renders the order record.
+#
+# Those three steps used to be cited here by line, and all three numbers had already drifted by
+# more than sixty lines. A citation into a file that is edited is a citation that goes stale
+# silently, and this header is not exempt just because the file is its own.
 #
 # Migrating would delete assertions to save a checkout that is already written. What was genuinely
 # missing was a PRODUCER — nothing here ever pushed the image it built — and that is what the
@@ -347,14 +351,17 @@ jobs:
         # silently delete the rule.
         run: test -f test/routes.test.ts && grep -q 'nginx.conf' test/routes.test.ts
 
-      - name: Every route this client calls cites the line that serves it
+      - name: Every route this client calls names the service that serves it
         # The rule test/mint.test.ts enforces, restated so that deleting the test does not delete
-        # it. Every `/v1/...` path in the client must appear in a file that also carries a
-        # `mint/src/server.ts:<line>` citation.
+        # it. Every `/v1/...` path in the client must live beside a `mint/src/server.ts` citation.
+        #
+        # It used to count `mint/src/server.ts:<line>` instead. The line was the defect: it named a
+        # position in a file micro-mint owns and is free to edit, so the erasure webhook moved every
+        # route below it and this step went red over a service change that broke nothing here.
         run: |
           set -uo pipefail
           paths=$(grep -coE "'/v1/[^']*'" src/lib/mint.ts || true)
-          cites=$(grep -coE 'mint/src/server\.ts:[0-9]+' src/lib/mint.ts || true)
+          cites=$(grep -coE 'mint/src/server\.ts' src/lib/mint.ts || true)
           if [ "${cites:-0}" -lt 8 ]; then
             echo "::error::src/lib/mint.ts carries ${cites:-0} route citations; the surface has eight"
             exit 1
