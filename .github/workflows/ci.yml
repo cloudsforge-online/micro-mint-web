@@ -39,22 +39,26 @@
 #
 # Re-checked against micro-org rather than believed:
 #
-#   * the single checkout is fixed. web-ci.yml:88-115 checks the app out into `app/`, micro-ui into
+#   * the single checkout is fixed. web-ci.yml checks the app out into `app/`, micro-ui into
 #     `ui/` beside it, and installs THE SIBLING FIRST, because `link:` resolves to the sibling's own
 #     node_modules — the shape of the `check:` job below. micro-ui is public now, so even the
 #     `estate_token` fallback to `github.token` resolves.
-#   * the deep-route probe is fixed, and inverted. web-ci.yml:290-297 REQUIRES an unknown path to
+#   * the deep-route probe is fixed, and inverted. web-ci.yml REQUIRES an unknown path to
 #     answer 404 and names `try_files $uri /index.html` as the thing not to do; the 200 is now asked
-#     only of the optional `deep-link-path` input (:299-309), a route the app really has.
+#     only of the optional `deep-link-path` input, a route the app really has.
 #
 # So the two things that made a bespoke `check:` and `image:` unavoidable are gone. This file is
-# still not deleted, because what remains is not a workaround: `rules:` (line 228 below) was
-# never claimed to be temporary — re-read the first line of this header, it names `check` and
+# still not deleted, because what remains is not a workaround: the `rules:` job below was never
+# claimed to be temporary — re-read the first line of this header, it names `check` and
 # `image` — and web-ci.yml has no input that could carry it. Its `runtime-hosts` job checks VITE_*,
 # build arguments, third-party analytics and the README. It cannot check
-#   that every route this client calls cites the line that serves it (line 285),
-#   that no act-as-anyone parameter (line 303),
-#   or that a project page never renders the order record (line 321).
+#   that every route this client calls names the service that serves it,
+#   that no act-as-anyone parameter reaches a customer bundle,
+#   or that a project page never renders the order record.
+#
+# Those three steps used to be cited here by line, and all three numbers had already drifted by
+# more than sixty lines. A citation into a file that is edited is a citation that goes stale
+# silently, and this header is not exempt just because the file is its own.
 #
 # Migrating would delete assertions to save a checkout that is already written. What was genuinely
 # missing was a PRODUCER — nothing here ever pushed the image it built — and that is what the
@@ -97,12 +101,13 @@ jobs:
       # THE SERVICE THIS CLIENT IS BUILT AGAINST, CHECKED OUT SO THE CITATIONS CAN BE VERIFIED.
       #
       # `test/mint.test.ts` reads `mint/src/server.ts` and requires that every route this bundle
-      # calls is registered at the line its citation names, that the two routes called without a
+      # calls is registered there — found by searching for its `define(`, never by line — that the
+      # two routes called without a
       # bearer really make no `authenticate()` call, and that mint still requires no
       # `Idempotency-Key`. Seven clients in this estate were built against a surface somebody
       # imagined; one made every on-chain escrow activation fail with a false diagnosis.
       #
-      # Only `src/` is fetched — the citations are line numbers in source, and nothing here builds
+      # Only `src/` is fetched — the check reads source, and nothing here builds
       # or runs the service.
       # ══════════════════════════════════════════════════════════════════════════════════════════
       - uses: actions/checkout@v4
@@ -117,12 +122,12 @@ jobs:
       # THE CONTRACT PACKAGE, SO THE RETIRED-CURRENCY CHECK HAS A LIST TO CHECK AGAINST.
       #
       # `test/retired-currency.test.ts` mounts this app's screens and refuses any asset named in
-      # `RETIRED_ASSETS` (contracts/packages/chain/src/index.ts:58). It READS that constant out of
+      # `RETIRED_ASSETS` (contracts/packages/chain/src/index.ts). It READS that constant out of
       # the package rather than importing it, so that the production image does not gain a build
       # context for a test — the file's own header records why, at length.
       #
       # Unpinned, at `main`, deliberately: the union is shared at HEAD by roughly a dozen
-      # repositories (the package header, :45-47), and pinning here would mean an asset retired
+      # repositories (the package header), and pinning here would mean an asset retired
       # upstream stopped being enforced on this surface until somebody remembered to bump it.
       #
       # Only `packages/chain` is fetched — one constant is read, and nothing here builds it.
@@ -184,11 +189,24 @@ jobs:
             echo "::error::the route cross-check skipped itself while micro-mint was present"
             exit 1
           fi
-          grep -qE 'is registered at mint/src/server\.ts:[0-9]+' <<<"$out" || {
+          # THERE IS NO LINE NUMBER TO MATCH ANY MORE, AND THAT IS THE POINT. This used to require
+          # `is registered at mint/src/server.ts:<n>`; the line number named a position in a file
+          # micro-mint owns, so its erasure webhook moved every route below it and turned this
+          # repository red while nothing here was wrong.
+          grep -qE '[A-Z]+ /v1/[^ ]* is registered in mint/src/server\.ts' <<<"$out" || {
             echo "::error::the route cross-check did not run against mint/src/server.ts"
             exit 1
           }
-          echo "ok: every cited route was verified against the service that serves it"
+          # Eight called routes plus the declined webhook. DEDUPED before counting: node:test names
+          # each subtest twice — once as it runs and once in the summary — so a raw `grep -c`
+          # doubles the figure, and a number nobody can reconcile is a number somebody eventually
+          # reasons from.
+          count=$(printf '%s\n' "$out" | grep -oE '[A-Z]+ /v1/[^ ]* is registered in mint/src/server\.ts' | sort -u | wc -l | tr -d ' ')
+          [ "$count" -ge 9 ] || {
+            echo "::error::only $count routes were checked against the service; the surface has nine"
+            exit 1
+          }
+          echo "ok: $count routes verified against the service that serves them"
 
       # ── The retired-currency check must have RUN, for the same reason ─────────────────────────
       #
@@ -215,35 +233,39 @@ jobs:
           }
           echo "ok: every screen was read for retired currency"
 
-      # …and the cross-check can fail. Bend one citation and require the suite to go red, so a
+      # …and the cross-check can fail. Bend one route and require the suite to go red, so a
       # `mint.test.ts` reduced to assertions that always pass cannot look like a verified client.
-      - name: …and it would have noticed a wrong citation
+      - name: …and it would have noticed a route the service does not serve
         working-directory: mint-web
         run: |
           set -euo pipefail
           cp test/mint.test.ts "$RUNNER_TEMP/mint.test.ts.orig"
-          # The line number is READ, never written here. This step used to hardcode it, and the day
-          # micro-mint's route table moved the sed matched nothing, the mutation did not happen,
-          # the suite passed, and this step failed — reporting "the cross-check passed a citation
-          # off by one line" when the truth was that no citation had been bent. A mutation test
-          # that names the value it mutates goes stale exactly when the thing it guards changes.
-          line=$(grep -oE "path: '/v1/catalogue', line: [0-9]+" test/mint.test.ts | grep -oE '[0-9]+$')
-          if [ -z "${line:-}" ]; then
-            echo "::error::no '/v1/catalogue' citation to bend — SURFACE has been renamed and this step is reading nothing"
-            exit 1
-          fi
-          sed -i "s|path: '/v1/catalogue', line: $line|path: '/v1/catalogue', line: $((line + 1))|" test/mint.test.ts
-          grep -q "path: '/v1/catalogue', line: $((line + 1))" test/mint.test.ts || {
-            echo "::error::the mutation did not apply; this step would grade an unmutated file"
+          # THE MUTATION IS A PATH NOW, NOT A LINE. Bending a line number tested that the suite read
+          # a particular position in micro-mint's file; bending a path tests that it read the service
+          # at all, which is the property actually worth having and the only one that survives that
+          # service being edited. `/v1/catalogue` is a route mint really registers, so renaming it to
+          # one mint does not serve must turn this suite red.
+          #
+          # The mutation is asserted to have HAPPENED before its effect is judged: a `sed` that
+          # matched nothing is a silent no-op, and this step would then report a correct test as
+          # fake — a confident wrong diagnosis, which is the defect this repository exists to avoid.
+          grep -q "path: '/v1/catalogue'" test/mint.test.ts || {
+            echo "::error::GET /v1/catalogue is not in the surface table; it has changed shape"
             exit 1
           }
+          sed -i "s|path: '/v1/catalogue'|path: '/v1/catalogue-that-mint-does-not-serve'|" test/mint.test.ts
+          if cmp -s test/mint.test.ts "$RUNNER_TEMP/mint.test.ts.orig"; then
+            echo "::error::the mutation changed nothing, so this step proves nothing"
+            cp "$RUNNER_TEMP/mint.test.ts.orig" test/mint.test.ts
+            exit 1
+          fi
           if node --import tsx --test test/mint.test.ts >/dev/null 2>&1; then
-            echo "::error::the cross-check passed a citation off by one line — it is not reading the service"
+            echo "::error::the cross-check passed with a route mint does not serve — it is not reading the service"
             cp "$RUNNER_TEMP/mint.test.ts.orig" test/mint.test.ts
             exit 1
           fi
           cp "$RUNNER_TEMP/mint.test.ts.orig" test/mint.test.ts
-          echo "ok: a citation off by one line turns the suite red, so a pass is evidence"
+          echo "ok: naming a route the service does not serve turns the suite red, so a pass is evidence"
 
       - name: Build
         working-directory: mint-web
@@ -329,14 +351,17 @@ jobs:
         # silently delete the rule.
         run: test -f test/routes.test.ts && grep -q 'nginx.conf' test/routes.test.ts
 
-      - name: Every route this client calls cites the line that serves it
+      - name: Every route this client calls names the service that serves it
         # The rule test/mint.test.ts enforces, restated so that deleting the test does not delete
-        # it. Every `/v1/...` path in the client must appear in a file that also carries a
-        # `mint/src/server.ts:<line>` citation.
+        # it. Every `/v1/...` path in the client must live beside a `mint/src/server.ts` citation.
+        #
+        # It used to count `mint/src/server.ts:<line>` instead. The line was the defect: it named a
+        # position in a file micro-mint owns and is free to edit, so the erasure webhook moved every
+        # route below it and this step went red over a service change that broke nothing here.
         run: |
           set -uo pipefail
           paths=$(grep -coE "'/v1/[^']*'" src/lib/mint.ts || true)
-          cites=$(grep -coE 'mint/src/server\.ts:[0-9]+' src/lib/mint.ts || true)
+          cites=$(grep -coE 'mint/src/server\.ts' src/lib/mint.ts || true)
           if [ "${cites:-0}" -lt 8 ]; then
             echo "::error::src/lib/mint.ts carries ${cites:-0} route citations; the surface has eight"
             exit 1
@@ -349,7 +374,7 @@ jobs:
 
       - name: No act-as-anyone parameter
         # `GET /v1/tokens` honours a `userId` query parameter for an admin principal
-        # (mint/src/server.ts:444-445). From a customer bundle it can only ever be the caller's own
+        # (mint/src/server.ts). From a customer bundle it can only ever be the caller's own
         # id or a 403, so exposing it would put an act-as-anyone-shaped control in a product app for
         # no reachable behaviour. deploy/gateway/dynamic/policy.yml refuses the /internal routes
         # that took a userId as a parameter for the same reason.
@@ -366,7 +391,7 @@ jobs:
           echo "ok: no act-as-anyone primitive"
 
       - name: A project page never renders the order record
-        # 04-domain-model §5.3, implemented at mint/src/projectpages.ts:1-21: supply, authorities
+        # 04-domain-model §5.3, implemented at mint/src/projectpages.ts: supply, authorities
         # and contract address come from the INDEXER. Falling back to the order would put a false
         # statement about a token in front of a prospective buyer. Also asserted by
         # test/render.test.ts; repeated so deleting the test does not delete the rule.
@@ -468,7 +493,7 @@ jobs:
           # The brand chrome is SERVED by the image, not merely committed to the repository. The web
           # template's Dockerfile once did not copy public/ into the build context, so four frontends
           # shipped an image with no icon in it while their own brand test passed. Fixed upstream at
-          # micro-web-template/Dockerfile:39; this probe is what would have caught it, and here a
+          # micro-web-template/Dockerfile; this probe is what would have caught it, and here a
           # missing asset would also blank the link preview on every shared project page.
           for asset in favicon-32x32.png favicon-192x192.png og-1200x630.png; do
             code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080/$asset" || true)
@@ -491,17 +516,17 @@ jobs:
 
   # ────────────────────────────────────────────────────────────────────────────────────────────────
   # THE IMAGE, PUBLISHED. Until this job existed the `image:` job above built this image and threw
-  # it away, so the release path could not name it. Every line number below was read off the source,
-  # not off the prose that cites it — the numbers in micro-org's own publish-image.yml header have
+  # it away, so the release path could not name it. Every claim below was read off the source,
+  # not off the prose that cites it — the citations in micro-org's own publish-image.yml header have
   # already drifted:
   #
   #   generator  `cfctl release` pins one image per deployable, the name from
-  #              org/tools/registry.ts:367-369 (`ghcr.io/<org>/<repo.repo>`, which is why the package
+  #              org/tools/registry.ts (`ghcr.io/<org>/<repo.repo>`, which is why the package
   #              is micro-<app> and not <app>) and the tag from that repository's package.json
-  #              version, org/tools/cfctl.ts:962-968.
+  #              version, org/tools/cfctl.ts.
   #   verifier   `cfctl release --verify` runs `docker manifest inspect` on EVERY entry and returns
-  #              non-zero if one cannot be pulled, org/tools/cfctl.ts:997-1038.
-  #   deployer   deploy/scripts/release-deploy.sh:99-124 refuses to change anything while any image
+  #              non-zero if one cannot be pulled, org/tools/cfctl.ts.
+  #   deployer   deploy/scripts/release-deploy.sh refuses to change anything while any image
   #              is missing.
   #
   # A frontend with no producer was therefore a manifest entry that could never verify.

@@ -117,7 +117,7 @@ describe('the stylesheet names only tokens that exist', () => {
       /*
        * ── `--cf-critical` WAS ON THIS LIST AND HAS BEEN TAKEN OFF IT ────────────────────────────
        *
-       * Design system 1.1 defines it (`ui/packages/ui/src/tokens.css:360`), so this assertion had
+       * Design system 1.1 defines it (`ui/packages/ui/src/tokens.css`), so this assertion had
        * been failing at baseline. The neighbouring check three lines up anticipated exactly that
        * case — "if one had quietly appeared upstream, this list would need REVISING rather than
        * enforcing" — and this is the revision, not a deletion of the point.
@@ -158,7 +158,7 @@ describe('the stylesheet names only tokens that exist', () => {
     it('the two aliases this stylesheet sets text in point at the TEXT steps', () => {
       /*
        * `--cf-danger` and `--cf-success` survive as aliases of `--cf-critical-text` and
-       * `--cf-good-text` (tokens.css:390-391), deliberately: every existing `color: var(--cf-danger)`
+       * `--cf-good-text` (tokens.css), deliberately: every existing `color: var(--cf-danger)`
        * in the estate became AA-compliant without the repository using it being touched, and every
        * existing border use kept clearing the non-text floor it needs. src/styles.css sets text in
        * `--cf-danger` twice, so this is the assertion that keeps those two legible.

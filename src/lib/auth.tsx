@@ -2,20 +2,20 @@
  * Session state for the tree, and the gate in front of the routes that need one.
  *
  * Hiding a route is NOT the security boundary — `mint` verifies the bearer on every route that
- * needs one (`authenticate`, `mint/src/server.ts:766`), and `ownedToken` answers 404 for another
- * customer's order (`mint/src/server.ts:702-719`). This exists so that a signed-out customer is
+ * needs one (`authenticate`, `mint/src/server.ts`), and `ownedToken` answers 404 for another
+ * customer's order (`mint/src/server.ts`). This exists so that a signed-out customer is
  * sent to sign in instead of being shown a screen made entirely of 401s.
  *
  * **Two routes are deliberately outside the gate**, because the service put them outside it:
- * `GET /v1/catalogue` (`mint/src/server.ts:374`) and `GET /v1/tokens/:id/page`
- * (`mint/src/server.ts:623`) make no `authenticate()` call at all. See `src/lib/routes.ts`.
+ * `GET /v1/catalogue` (`mint/src/server.ts`) and `GET /v1/tokens/:id/page`
+ * (`mint/src/server.ts`) make no `authenticate()` call at all. See `src/lib/routes.ts`.
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * ── The `/auth/me` shape ──────────────────────────────────────────────────────────────────────
  *
  * Identity answers `{ user: {...}, session: {...}, organisations: [...] }` — the profile is
- * NESTED under `user`. The route is `identity/src/server.ts:891-903` and the body is built by
- * `toPublicUser` at `identity/src/users.ts:52-63`; both citations were re-read against the source
+ * NESTED under `user`. The route is `identity/src/server.ts` and the body is built by
+ * `toPublicUser` at `identity/src/users.ts`; both citations were re-read against the source
  * for this repository rather than carried over.
  *
  * That shape is worth stating because the estate got it wrong once, at the root: the web template
@@ -25,7 +25,7 @@
  * operator.
  *
  * **It has since been fixed everywhere, and this comment says so rather than describing an estate
- * that no longer exists.** `micro-web-template/src/lib/auth.tsx:26-32` now declares the nested
+ * that no longer exists.** `micro-web-template/src/lib/auth.tsx` now declares the nested
  * shape and reads `me?.user?.handle` / `me?.user?.roles` (lines 98-99), and hub-web, site,
  * foresight-web, foresight-admin-web and market-web all do the same. A README that had gone on
  * claiming otherwise would be the estate's own recurring defect — a document describing something

@@ -8,7 +8,7 @@
  *
  * The second thing under test is the dev-port disagreement, asserted as a FACT rather than fixed
  * with a literal: the registry gives `create` 4004 and mint binds 4000
- * (`mint/src/env.ts:251`, `mint/.env.example:38`). See the header of src/lib/hosts.ts.
+ * (`mint/src/env.ts`, `mint/.env.example`). See the header of src/lib/hosts.ts.
  */
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

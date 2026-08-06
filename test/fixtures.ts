@@ -15,7 +15,7 @@ export function catalogue(over: Partial<Catalogue> = {}): Catalogue {
     // $25.00. The same integer the catalogue used to serve as `priceShards`, and deliberately so:
     // SHARD has `decimals: 0` and the peg was 100 Shards to the dollar, so one Shard was exactly
     // one cent and migration 6's backfill is the identity on the stored number
-    // (`mint/src/migrations.ts:282-292`). Changing it here would have made this fixture disagree
+    // (`mint/src/migrations.ts`). Changing it here would have made this fixture disagree
     // with the rows the service actually holds.
     priceUsdCents: '2500',
     settlementAsset: 'EMBER',
@@ -40,7 +40,7 @@ export function catalogue(over: Partial<Catalogue> = {}): Catalogue {
  * The three numbers are consistent with each other rather than plausible-looking, because a
  * fixture whose amounts do not agree teaches a screen to render an arrangement that cannot exist:
  * `coinAmountForUsdCents(2500n, 18, 50_000n)` is `2500 · 10^18 · RATE_SCALE / (50_000 · 10^2)` =
- * 5·10^20 wei (`contracts/packages/chain/src/index.ts:430-446`), and 5·10^20 / `WEI_PER_SPARK` is
+ * 5·10^20 wei (`contracts/packages/chain/src/index.ts`), and 5·10^20 / `WEI_PER_SPARK` is
  * exactly 500,000,000 Sparks — so `chargeAmountSparks` is a whole number here and the Sparks
  * display path is the one the screens exercise. `test/format.test.ts` covers the other branch,
  * where the wei do not divide and the service sends null rather than a rounded figure.
@@ -68,7 +68,7 @@ const UNSETTLED = {
  * Fifteen call sites say `fx.order({ status: 'paid' })` and nothing else. Written as a flat
  * literal, that produced an order that is paid and was charged NOTHING — a row the service's own
  * database refuses: `tokens_paid_records_charge` requires a charge asset and amount on anything
- * with a journal entry (`mint/src/migrations.ts:387-392`). Every screen mounted over it would have
+ * with a journal entry (`mint/src/migrations.ts`). Every screen mounted over it would have
  * been reading the "not charged yet" branch while claiming to test the paid one, which is the
  * shape of defect this whole change exists to close.
  *
@@ -148,7 +148,7 @@ export const SIGNED_IN = {
   'cf.refreshToken': 'refresh-token-stub',
 }
 
-/** `GET /auth/me` as `identity/src/server.ts:895-902` returns it: the profile is nested. */
+/** `GET /auth/me` as `identity/src/server.ts` returns it: the profile is nested. */
 export const ME = {
   user: { id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', handle: 'creator', roles: ['customer'] },
   session: { id: 'session-1' },

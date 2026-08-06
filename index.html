@@ -5,8 +5,8 @@
   because a page that paints before the attributes land flashes the default ember and then changes
   colour.
 
-  'create' is brass, #b28e1e — its own block in tokens.css (`ui/packages/ui/src/tokens.css:356`),
-  and the accent the registry gives this surface (`ui/packages/ui/src/surfaces.ts:214-225`).
+  'create' is brass, #b28e1e — its own block in tokens.css (`ui/packages/ui/src/tokens.css`),
+  and the accent the registry gives this surface (`ui/packages/ui/src/surfaces.ts`).
 
   'warm' is the ash ramp the brand marks in brand/assets/create/ are drawn on, and the one every
   other product frontend in the estate uses.
@@ -82,8 +82,8 @@
 
       ── WHY THEY NAME EMBER AND US DOLLARS ───────────────────────────────────────────────────
       Both sentences named the RETIRED asset until 2026-08-06. It was retired on 2026-08-04
-      (`contracts/packages/chain/src/index.ts:58`) and micro-mint migrated on 2026-08-05
-      (`mint/src/migrations.ts:258`, migration 6): an order is DURABLE IN US CENTS and SETTLED IN
+      (`contracts/packages/chain/src/index.ts`) and micro-mint migrated on 2026-08-05
+      (`mint/src/migrations.ts`, migration 6): an order is DURABLE IN US CENTS and SETTLED IN
       EMBER at the rate read inside the payment request. Every rendered screen was corrected then,
       and `test/retired-currency.test.ts` mounts them and reads their text so it stays that way —
       but that file reads RENDERED text on purpose, so it never looked here, and the two strings a

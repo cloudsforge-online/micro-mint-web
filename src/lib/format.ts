@@ -5,7 +5,7 @@
  * TWO RULES, AND BOTH ARE ABOUT THE SAME THING: NOT LETTING AN INTENT READ AS AN OBSERVATION.
  *
  * **1. Never render a null as a zero, a false or a dash without a reason.** `RiskIndicators` is
- * null in every field when the indexer has no answer, and `mint/src/projectpages.ts:153-154` says
+ * null in every field when the indexer has no answer, and `mint/src/projectpages.ts` says
  * why in one line: "'We have not observed this' and 'this is false' are different statements and a
  * buyer is entitled to the difference." A page that rendered `ownershipRenounced: null` as "not
  * renounced" would be making a claim about a contract nobody has looked at.
@@ -70,7 +70,7 @@ export interface Tone {
 }
 
 /**
- * The eight order states — `mint/src/tokens.ts:38-49`.
+ * The eight order states — `mint/src/tokens.ts`.
  *
  * All eight, including the two a customer rarely sees. `provisioning` and `awaiting_funds` are
  * real rows the deploy job writes, and a screen that fell through to "unknown" for either would be
@@ -127,10 +127,10 @@ export function statusTone(status: TokenStatus): Tone {
         meaning: 'The contract is on chain at the address below.',
       }
     case 'failed':
-      // `mint/src/tokens.ts:52` makes this TERMINAL, and `CLAIMABLE` (`tokens.ts:68-73`) leaves it
+      // `mint/src/tokens.ts` makes this TERMINAL, and `CLAIMABLE` (`tokens.ts`) leaves it
       // out deliberately — re-claiming a failed row immediately is what makes a double mint
       // reachable. Saying "will not retry automatically" is the service's own wording
-      // (`mint/src/server.ts:551`), and it is the honest thing to put in front of a customer.
+      // (`mint/src/server.ts`), and it is the honest thing to put in front of a customer.
       return {
         tone: 'crit',
         glyph: '■',
@@ -140,7 +140,7 @@ export function statusTone(status: TokenStatus): Tone {
   }
 }
 
-/** `mint/src/tokens.ts:670-677`. Seven outcomes, each a different fact about a chain. */
+/** `mint/src/tokens.ts`. Seven outcomes, each a different fact about a chain. */
 export function outcomeTone(outcome: AttemptOutcome): Tone {
   switch (outcome) {
     case 'signed':
@@ -170,7 +170,7 @@ export function outcomeTone(outcome: AttemptOutcome): Tone {
 /**
  * A risk indicator, as three states rather than two.
  *
- * `unknown` is not a styling choice. `mint/src/projectpages.ts:151-161` returns null in every
+ * `unknown` is not a styling choice. `mint/src/projectpages.ts` returns null in every
  * field when the indexer has no observation, and the whole point of §5.3 is that the page renders
  * the CHAIN's answer or none — never the order record standing in for it.
  */
@@ -241,9 +241,9 @@ export function shortId(id: string): string {
 /**
  * Group a decimal string: `'1234567'` → `'1,234,567'`. String in, string out — no `Number`.
  *
- * A copy of `tessera-web/src/lib/money.ts:105`, not an import: `@cloudsforge/contracts-money` is
+ * A copy of `tessera-web/src/lib/money.ts`, not an import: `@cloudsforge/contracts-money` is
  * not a dependency any frontend in this estate carries, and adding one for four lines of regex
- * would put a build context into `Dockerfile:32` for the sake of a comma.
+ * would put a build context into `Dockerfile` for the sake of a comma.
  */
 function groupDigits(value: string): string {
   return value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -256,16 +256,16 @@ function groupDigits(value: string): string {
  * THIS REPLACED `shards()`, AND THE REPLACEMENT IS THE POINT RATHER THAN A RENAME.
  *
  * Forge Create priced a deploy in Shards until 2026-08-05 and this function said so. SHARD was
- * retired on 2026-08-04 (`contracts/packages/chain/src/index.ts:58`); micro-mint migrated a day
+ * retired on 2026-08-04 (`contracts/packages/chain/src/index.ts`); micro-mint migrated a day
  * later, and an order is now quoted in US cents and settled in EMBER
- * (`mint/src/migrations.ts:258`, migration 6). The wire field `priceShards` was DELETED rather
+ * (`mint/src/migrations.ts`, migration 6). The wire field `priceShards` was DELETED rather
  * than re-based, so there is nothing left for the old function to format — which is why this is a
  * different function with a different unit and not `shards()` with new copy on top of it.
  *
  * ── NULL IN, NULL OUT, AND NEVER A ZERO ───────────────────────────────────────────────────────
  *
  * **`BigInt('')` is `0n` and `Number('')` is `0`**, so every obvious way of formatting money turns
- * a missing value into a confident zero. That is the hazard `tessera-web/src/lib/money.ts:4-16`
+ * a missing value into a confident zero. That is the hazard `tessera-web/src/lib/money.ts`
  * exists for, and the one `test/format.test.ts` asserted of `shards()` before this: a button
  * offering to charge "$0.00" is the one mistake in that class a customer will act on.
  *
@@ -297,7 +297,7 @@ export function usd(cents: string | null | undefined): string | null {
  *
  * `usd()` above renders the QUOTE. This renders the RECEIPT, and they are deliberately not the
  * same number: a deploy is priced in dollars and settled in EMBER at the rate micro-pricing gave
- * at the moment of payment (`mint/src/pricingclient.ts:1-67`). Showing only the quote would leave
+ * at the moment of payment (`mint/src/pricingclient.ts`). Showing only the quote would leave
  * a customer unable to check what left their balance; showing only the charge would leave them
  * unable to check it against the advertised price.
  *
@@ -307,7 +307,7 @@ export function usd(cents: string | null | undefined): string | null {
  * settlement amount usually carries sub-Spark wei. **This function does not round into that
  * null.** It falls back to the exact wei figure, which is long and ugly and TRUE; a tidy "2,500
  * Sparks" over a charge of 2,500.0000004 Sparks is a price that is not the price
- * (`mint/src/pricingclient.ts:74-84`).
+ * (`mint/src/pricingclient.ts`).
  *
  * ── A PRE-MIGRATION ORDER SAYS SHARD, AND THAT IS CORRECT ─────────────────────────────────────
  *
@@ -315,7 +315,7 @@ export function usd(cents: string | null | undefined): string | null {
  * for one. `test/retired-currency.test.ts` forbids retired currency on the live surface and this
  * does not breach it: the live surface quotes USD and settles EMBER, and what this prints for an
  * archived order is a receipt for a debit micro-ledger really recorded in SHARD. Relabelling it
- * EMBER would be a false statement about money — the same trade `mint/src/server.ts:739-742`
+ * EMBER would be a false statement about money — the same trade `mint/src/server.ts`
  * refuses from the other side of the wire, and the reason the screens could not be fixed by
  * relabelling in the first place.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -333,7 +333,7 @@ export function charge(order: {
     ? groupDigits(order.chargeAmount)
     : order.chargeAmount
   // The unit, spelled out. `chargeAmount` is smallest units, and wei is the smallest unit of
-  // EMBER (18 decimals, `contracts/packages/chain/src/index.ts:196`); every other asset this can
+  // EMBER (18 decimals, `contracts/packages/chain/src/index.ts`); every other asset this can
   // carry is a retired one whose smallest unit IS the unit, so the code alone is right there.
   return order.chargeAssetCode === 'EMBER'
     ? `${amount} wei EMBER`

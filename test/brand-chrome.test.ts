@@ -18,7 +18,7 @@
  * The last two tests are the ones that matter most on this surface. The web template's Dockerfile
  * once did not copy `public/`, so every frontend cut from it built an image whose `dist/` had no
  * icons — while a test exactly like this one passed, because it reads the SOURCE tree. That is
- * fixed upstream (`micro-web-template/Dockerfile:39`) and in every frontend, so the tests below
+ * fixed upstream (`micro-web-template/Dockerfile`) and in every frontend, so the tests below
  * are a guard rather than a correction. They are still worth their lines: reading a Dockerfile is
  * not evidence that an image serves a file, which is why the second of them requires CI to CURL
  * the running container. Here a missing public/ would also 404 `og:image` and blank the link
@@ -114,7 +114,7 @@ test('public/ holds no stray brand asset that nothing links', () => {
 
 test('the accent and substrate are declared on <html>, before React can paint', () => {
   // Set by React, the page paints the default ember and then changes colour. `create` has its own
-  // block in tokens.css (`ui/packages/ui/src/tokens.css:356`); admin's did not, and the console
+  // block in tokens.css (`ui/packages/ui/src/tokens.css`); admin's did not, and the console
   // wore the company's colour by accident for as long as that was true.
   assert.match(HTML, /data-cf-product="create"/)
   assert.match(HTML, /data-cf-substrate="warm"/)
@@ -123,7 +123,7 @@ test('the accent and substrate are declared on <html>, before React can paint', 
 test('the Dockerfile copies public/ into the build context', () => {
   // Without it Vite has no publicDir to copy into dist, and the image ships with no icons at all
   // while this very test passes, because it reads the SOURCE tree. That is how four frontends
-  // shipped iconless. Fixed in the template at micro-web-template/Dockerfile:39; pinned here so it
+  // shipped iconless. Fixed in the template at micro-web-template/Dockerfile; pinned here so it
   // cannot be lost again, and backed by the container probe below, which is the only check that
   // could have caught it in the first place.
   const dockerfile = readFileSync(at('Dockerfile'), 'utf8')

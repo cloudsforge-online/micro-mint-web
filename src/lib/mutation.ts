@@ -40,8 +40,8 @@
  * ── What the services do with a duplicate, stated honestly ────────────────────────────────────
  *
  * Mint reads NO inbound `Idempotency-Key` on ANY route — unlike trade, which requires one on every
- * mutating route (`trade/src/server.ts:840-848`). The `idempotencyKey` occurrences in
- * `mint/src/ledgerclient.ts:79` and `mint/src/custodyclient.ts:206` are keys mint SENDS
+ * mutating route (`trade/src/server.ts`). The `idempotencyKey` occurrences in
+ * `mint/src/ledgerclient.ts` and `mint/src/custodyclient.ts` are keys mint SENDS
  * DOWNSTREAM, derived as `mint:order:<tokenId>`. This client therefore has no key to send and no
  * convention to follow, and the latch is the only client-side lever there is.
  *
@@ -49,15 +49,15 @@
  * latch is a fix and not a safeguard:
  *
  *   - PAY. `payForDeploy` re-reads the row `for update` and refuses anything that is not
- *     `awaiting_payment` (`mint/src/orders.ts:105-116`). A concurrent second request blocks on the
- *     lock, wakes to find `paid`, and throws `OrderStateError` → **409** (`mint/src/server.ts:307-311`).
+ *     `awaiting_payment` (`mint/src/orders.ts`). A concurrent second request blocks on the
+ *     lock, wakes to find `paid`, and throws `OrderStateError` → **409** (`mint/src/server.ts`).
  *     Nobody is charged twice. But the 409 lands in this hook's `error`, so the screen renders "The
  *     payment did not go through" beside "Paid. … has been debited". The `replayed: true`
  *     this file used to cite is NOT that path: it comes from the LEDGER replaying its derived key
- *     (`mint/src/orders.ts:152`) and covers a rolled-back retry, not a double click.
- *   - DEPLOY. The enqueue is `onConflict: 'keep'` (`mint/src/server.ts:574-579`), so three clicks
+ *     (`mint/src/orders.ts`) and covers a rolled-back retry, not a double click.
+ *   - DEPLOY. The enqueue is `onConflict: 'keep'` (`mint/src/server.ts`), so three clicks
  *     produce one run. Both requests answer 202 and nothing reaches a chain twice.
- *   - CREATE. `POST /v1/tokens` is a plain insert (`mint/src/tokens.ts:315-334`) with no
+ *   - CREATE. `POST /v1/tokens` is a plain insert (`mint/src/tokens.ts`) with no
  *     conditional update and no key. Two requests open TWO ORDERS, and only the latch prevents it.
  */
 import { useCallback, useRef, useState } from 'react'

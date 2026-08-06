@@ -1,13 +1,13 @@
 /**
- * The public project page. `GET /v1/tokens/:id/page` — `mint/src/server.ts:623`.
+ * The public project page. `GET /v1/tokens/:id/page` — `mint/src/server.ts`.
  *
  * **No `authenticate()` call.** Fetched with `auth: false` and rendered to anybody with the
  * address, because "a project page nobody can read without an account is a project page that
- * cannot do the one job it has" (`mint/src/server.ts:620-621`).
+ * cannot do the one job it has" (`mint/src/server.ts`).
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * THE INVARIANT THIS SCREEN EXISTS TO KEEP — 04-domain-model §5.3, implemented at
- * `mint/src/projectpages.ts:1-21`:
+ * `mint/src/projectpages.ts`:
  *
  *   Supply, authorities, network and contract address come from the INDEXER, never from the order
  *   record. The order says what the customer asked for at the moment they paid. The chain says

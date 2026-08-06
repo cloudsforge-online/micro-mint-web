@@ -40,8 +40,8 @@ export default defineConfig({
   // The registry's devPort names where the API answers, not where this bundle is served from —
   // the same distinction admin-web had to draw when its entry said 3002 and admin-api bound 4014.
   //
-  // `create` says devPort 4004 (`ui/packages/ui/src/surfaces.ts:219`). `mint` binds **4000**:
-  // `mint/src/env.ts:251` defaults `PORT` to 4000 and `mint/.env.example:38` sets it to 4000. So
+  // `create` says devPort 4004 (`ui/packages/ui/src/surfaces.ts`). `mint` binds **4000**:
+  // `mint/src/env.ts` defaults `PORT` to 4000 and `mint/.env.example` sets it to 4000. So
   // under `pnpm dev` this app resolves `http://localhost:4004` and mint, run with its own example
   // environment, is not there. That is NOT papered over with a literal port here — a hard-coded
   // host is a second, unversioned copy of the registry and the copy is the one that goes stale.

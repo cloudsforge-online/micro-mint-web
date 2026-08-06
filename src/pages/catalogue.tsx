@@ -1,15 +1,15 @@
 /**
  * What Forge Create can deploy, and what it costs.
  *
- * `GET /v1/catalogue` — `mint/src/server.ts:374`. **No `authenticate()` call**, so this screen is
+ * `GET /v1/catalogue` — `mint/src/server.ts`. **No `authenticate()` call**, so this screen is
  * fetched with `auth: false` and rendered to a signed-out visitor. That is not a convenience: the
  * handler's own comment says "a catalogue behind a token cannot be browsed", and a product whose
  * front page demands a session cannot answer the question people arrive with.
  *
  * The catalogue is a PROJECTION of the committed contracts rather than a price list somebody
- * maintains (`mint/src/catalogue.ts:1-9`), which is why the cap rule is rendered as part of each
+ * maintains (`mint/src/catalogue.ts`), which is why the cap rule is rendered as part of each
  * tier rather than as small print: `cap` is `'required'` or `'forbidden'`
- * (`mint/src/catalogue.ts:36`) and there is no third option. A customer who does not learn that
+ * (`mint/src/catalogue.ts`) and there is no third option. A customer who does not learn that
  * here learns it after paying — see the note in src/lib/launch.ts.
  */
 import { Link } from 'react-router-dom'
@@ -69,7 +69,7 @@ export function CataloguePage() {
             <p className="mw-price">
               {/* The quote, and the quote alone. What it costs in EMBER is a settlement-time
                   question the catalogue cannot answer: the rate is read per payment and recorded
-                  on the order that used it (mint/src/pricingclient.ts:12-21), so a figure printed
+                  on the order that used it (mint/src/pricingclient.ts), so a figure printed
                   here would be a rate this screen never consulted. The note below says what the
                   charge will be DENOMINATED in, which is the part that is durable. */}
               {usd(catalogue.data.priceUsdCents) === null ? (
@@ -85,7 +85,7 @@ export function CataloguePage() {
               Charged once, when you pay for an order, and settled in{' '}
               <code className="cf-num">{catalogue.data.settlementAsset}</code> at the rate at the
               moment you pay. Opening an order charges nothing
-              (<code className="cf-num">POST /v1/tokens</code>, mint/src/server.ts:399).
+              (<code className="cf-num">POST /v1/tokens</code>, mint/src/server.ts).
               {/* The service's default network, which the order form pre-selects. Rendered because
                   a catalogue that does not say which network it priced is describing two
                   different products at one price. */}{' '}
@@ -144,7 +144,7 @@ export function CataloguePage() {
               {CHAINS.map(chainName).join(', ')}. A deploy is accepted immediately and runs as a
               job: the response is a <code className="cf-num">202</code> and a status address, never
               a contract. Nothing in a launch request reaches a chain
-              (mint/src/server.ts:536-541).
+              (mint/src/server.ts).
             </p>
           </section>
 

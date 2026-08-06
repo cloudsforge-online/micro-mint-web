@@ -5,7 +5,7 @@
  * That is the whole problem: a test that asserts "the client calls /v1/tokens" is a test that the
  * client agrees with itself. So this file does not assert paths in the abstract — it reads
  * `mint/src/server.ts` from the sibling checkout and requires that each path and method this
- * bundle calls is REGISTERED there, at the line the citation names.
+ * bundle calls is REGISTERED there — found by SEARCHING for its `define(`, never by citing a line.
  *
  * ── What happens without the sibling ──────────────────────────────────────────────────────────
  *
@@ -35,20 +35,27 @@ const MINT_CANDIDATES = [
 const mintServer = MINT_CANDIDATES.find((p) => existsSync(p))
 
 /**
- * The surface this bundle uses, with the line each was read from.
+ * The surface this bundle uses.
  *
- * Written down here as DATA so the check below can be mechanical. If one of these citations is
- * wrong, the test fails and names it — which is the property a comment does not have.
+ * Written down here as DATA so the check below can be mechanical. If one of these routes is not
+ * registered by the service, the test fails and names it — which is the property a comment does
+ * not have.
+ *
+ * It used to carry the LINE each route was read from, and that line is why this repository kept
+ * going red for edits made in a different one. micro-mint gained an erasure webhook and its routes
+ * moved by anywhere from +1 to +81 depending on where they sat; every entry here was then wrong
+ * while nothing in this bundle was. Nothing runs this suite when that service changes, so it
+ * surfaced during a release rather than at the edit that caused it.
  */
-const SURFACE: ReadonlyArray<{ method: string; path: string; line: number; authenticates: boolean }> = [
-  { method: 'GET', path: '/v1/catalogue', line: 374, authenticates: false },
-  { method: 'POST', path: '/v1/tokens', line: 400, authenticates: true },
-  { method: 'GET', path: '/v1/tokens', line: 468, authenticates: true },
-  { method: 'GET', path: '/v1/tokens/:id', line: 481, authenticates: true },
-  { method: 'POST', path: '/v1/tokens/:id/pay', line: 505, authenticates: true },
-  { method: 'POST', path: '/v1/tokens/:id/deploy', line: 542, authenticates: true },
-  { method: 'PUT', path: '/v1/tokens/:id/page', line: 597, authenticates: true },
-  { method: 'GET', path: '/v1/tokens/:id/page', line: 623, authenticates: false },
+const SURFACE: ReadonlyArray<{ method: string; path: string; authenticates: boolean }> = [
+  { method: 'GET', path: '/v1/catalogue', authenticates: false },
+  { method: 'POST', path: '/v1/tokens', authenticates: true },
+  { method: 'GET', path: '/v1/tokens', authenticates: true },
+  { method: 'GET', path: '/v1/tokens/:id', authenticates: true },
+  { method: 'POST', path: '/v1/tokens/:id/pay', authenticates: true },
+  { method: 'POST', path: '/v1/tokens/:id/deploy', authenticates: true },
+  { method: 'PUT', path: '/v1/tokens/:id/page', authenticates: true },
+  { method: 'GET', path: '/v1/tokens/:id/page', authenticates: false },
 ]
 
 /**
@@ -58,11 +65,10 @@ const SURFACE: ReadonlyArray<{ method: string; path: string; line: number; authe
  * in both directions: a route nobody has read should make somebody look, and a route somebody has
  * read and declined should not.
  */
-const DECLINED: ReadonlyArray<{ method: string; path: string; line: number; why: string }> = [
+const DECLINED: ReadonlyArray<{ method: string; path: string; why: string }> = [
   {
     method: 'POST',
     path: '/v1/events',
-    line: 644,
     why: 'HMAC webhook — the credential is the MAC, and a browser holds no signing secret',
   },
 ]
@@ -85,17 +91,19 @@ describe('the client calls only routes it has cited', () => {
     }
   })
 
-  it('cites a line for every route, in the doc comment as well as here', () => {
-    for (const route of SURFACE) {
-      assert.ok(
-        client.includes(`mint/src/server.ts:${route.line}`),
-        `${route.method} ${route.path} has no citation in src/lib/mint.ts`,
-      )
-    }
+  it('says where it read the surface from', () => {
+    // The FILE, not a line in it. A line number here was a promise this repository could not keep:
+    // it names a position in a file micro-mint is free to edit, and the erasure webhook moved every
+    // route below it. What is worth asserting is that the client points a reader at the source of
+    // truth; the suite below proves the routes are really there.
+    assert.ok(
+      client.includes('mint/src/server.ts'),
+      'src/lib/mint.ts no longer says which service source it was read from',
+    )
   })
 })
 
-describe('the cited lines are the lines that register the routes', () => {
+describe('every route this bundle names is really registered by the service', () => {
   if (mintServer === undefined) {
     // NOT a silent pass. It says which check did not run, and CI makes the absence fatal.
     it('SKIPPED: no micro-mint checkout — CI checks one out and requires this to run', () => {
@@ -111,14 +119,39 @@ describe('the cited lines are the lines that register the routes', () => {
     assert.ok(defines.length >= 8, `expected mint's route list, found ${defines.length} defines`)
   })
 
-  for (const route of SURFACE) {
-    it(`${route.method} ${route.path} is registered at mint/src/server.ts:${route.line}`, () => {
-      // 1-indexed citation, 0-indexed array.
-      const line = lines[route.line - 1] ?? ''
-      assert.match(
-        line,
-        new RegExp(`define\\('${route.method}',\\s*'${route.path.replace(/[/:]/g, '\\$&')}'`),
-        `mint/src/server.ts:${route.line} is:\n  ${line.trim()}`,
+  /**
+   * Where a route is registered, found by SEARCHING for it rather than by citing a line.
+   *
+   * Searching costs one pass over a file already in memory and cannot go stale. What is actually
+   * worth asserting is that the route EXISTS and that its handler behaves as this bundle believes;
+   * neither of those is a fact about line 374. A service edit that MOVES a route can no longer
+   * break this file. A service edit that REMOVES one still does, which is the property that was
+   * ever worth having.
+   */
+  const indexOfRoute = (method: string, path: string): number => {
+    const re = new RegExp(`^\\s{4}define\\('${method}',\\s*'${path.replace(/[/:]/g, '\\$&')}'`)
+    return lines.findIndex((l) => re.test(l))
+  }
+
+  /** A handler's body: from its `define(` to the next one at the same indentation, or to the end. */
+  const bodyOf = (method: string, path: string): string => {
+    const start = indexOfRoute(method, path)
+    assert.ok(start >= 0, `${method} ${path} is not registered in mint/src/server.ts`)
+    let end = lines.length
+    for (let i = start + 1; i < lines.length; i++) {
+      if (/^\s{4}define\('/.test(lines[i] ?? '')) {
+        end = i
+        break
+      }
+    }
+    return lines.slice(start, end).join('\n')
+  }
+
+  for (const route of [...SURFACE, ...DECLINED]) {
+    it(`${route.method} ${route.path} is registered in mint/src/server.ts`, () => {
+      assert.ok(
+        indexOfRoute(route.method, route.path) >= 0,
+        `${route.method} ${route.path} is not registered in mint/src/server.ts at all`,
       )
     })
   }
@@ -133,19 +166,21 @@ describe('the cited lines are the lines that register the routes', () => {
       .map((m) => `${m[1]} ${m[2]}`)
       .filter((r) => r.includes('/v1/'))
     // DECLINED is data like SURFACE, so it is held to the same bar — an unverified exemption list
-    // is just a way to silence this check.
+    // is just a way to silence this check. Each entry is looked up, not cited.
     for (const route of DECLINED) {
-      const line = lines[route.line - 1] ?? ''
-      assert.match(
-        line,
-        new RegExp(`define\\('${route.method}',\\s*'${route.path.replace(/[/:]/g, '\\$&')}'`),
-        `mint/src/server.ts:${route.line} is:\n  ${line.trim()}`,
+      assert.ok(
+        indexOfRoute(route.method, route.path) >= 0,
+        `${route.method} ${route.path} is declined here but mint does not register it at all`,
       )
     }
     // And the stated reason is the real one: the webhook declines on a bad MAC, not on a bearer.
-    const events = lines.slice(643, 660).join('\n')
+    // This used to read a hardcoded `lines.slice(643, 660)`, which is the same defect one layer
+    // down — a window into another repository's file, silently pointing at the wrong seventeen
+    // lines the moment anything above them moved. The handler is now found by its route.
+    const events = bodyOf('POST', '/v1/events')
     assert.match(events, /verifyEventSignature\(raw, deps\.eventAcceptSecrets, presented\)/)
     assert.match(events, /errorReply\(403, 'bad_signature'/)
+    assert.doesNotMatch(events, /await authenticate\(ctx, deps\)/, 'the webhook now takes a bearer')
 
     const known = [...SURFACE, ...DECLINED].map((r) => `${r.method} ${r.path}`)
     assert.deepEqual(
@@ -159,16 +194,7 @@ describe('the cited lines are the lines that register the routes', () => {
     // The defect this asserts against is a client sending a bearer to a handler that never wanted
     // one and then reasoning about a 403 that was not about authorisation.
     for (const route of SURFACE) {
-      const start = route.line - 1
-      // The handler runs to the next `define(` at the same indentation, or to the end.
-      let end = lines.length
-      for (let i = start + 1; i < lines.length; i++) {
-        if (/^\s{4}define\('/.test(lines[i] ?? '')) {
-          end = i
-          break
-        }
-      }
-      const body = lines.slice(start, end).join('\n')
+      const body = bodyOf(route.method, route.path)
       assert.equal(
         /await authenticate\(ctx, deps\)/.test(body),
         route.authenticates,

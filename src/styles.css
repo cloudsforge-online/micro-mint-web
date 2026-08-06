@@ -12,7 +12,7 @@
  * `data-cf-substrate="warm"` in index.html — the family the brand marks in
  * `brand/assets/create/` are drawn on, so the favicon has no visible plate around it. The accent
  * is brass, #b28e1e, which comes from `[data-cf-product='create']` in @cloudsforge/ui
- * (`ui/packages/ui/src/tokens.css:356`) and is never written down here.
+ * (`ui/packages/ui/src/tokens.css`) and is never written down here.
  *
  * ── State is never colour alone ───────────────────────────────────────────────────────────────
  *
@@ -488,7 +488,7 @@ body {
 
 /*
  * An absence, rendered as words rather than as a dash. "Not observed" is a different statement
- * from "no", and the reader is entitled to the difference — mint/src/projectpages.ts:153-154.
+ * from "no", and the reader is entitled to the difference — mint/src/projectpages.ts.
  */
 .mw-absent {
   color: var(--cf-fg-dim);
