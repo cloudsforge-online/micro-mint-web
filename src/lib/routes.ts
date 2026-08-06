@@ -33,7 +33,7 @@ export interface AppRoute {
    * True when the route renders without a session.
    *
    * Two of them do, and it is read off the SERVICE rather than chosen: `GET /v1/catalogue`
-   * (`mint/src/server.ts:358`) and `GET /v1/tokens/:id/page` (`mint/src/server.ts:607`) make no
+   * (`mint/src/server.ts:374`) and `GET /v1/tokens/:id/page` (`mint/src/server.ts:623`) make no
    * `authenticate()` call at all. Putting either behind the session gate would be this app
    * demanding a token the service never wanted — the same shape as the marketplace client that
    * sent a bearer to an unauthenticated route and then had to reason about a 403 that was never
@@ -47,10 +47,10 @@ export const ROUTES: readonly AppRoute[] = [
   // launch, and what does it cost" — and it answers it to somebody who has not signed in, which
   // is who arrives at a product's front page.
   { path: '', label: 'Catalogue', wildcard: false, public: true },
-  // The order form. Behind the gate: `POST /v1/tokens` authenticates (`mint/src/server.ts:385`).
+  // The order form. Behind the gate: `POST /v1/tokens` authenticates (`mint/src/server.ts:401`).
   { path: 'launch', label: 'Launch a token', wildcard: false, public: false },
   // Wildcard: `/tokens/<uuid>` is the order's status page — the address `POST .../deploy` puts in
-  // its `Location` header (`mint/src/server.ts:566-576`), which is what a customer polls.
+  // its `Location` header (`mint/src/server.ts:582-592`), which is what a customer polls.
   { path: 'tokens', label: 'Your launches', wildcard: true, public: false },
   // ────────────────────────────────────────────────────────────────────────────────────────────
   // REACHABLE AND DELIBERATELY NOT OFFERED, which is what `label: null` is for.

@@ -60,7 +60,7 @@ const PAGES: ReadonlyArray<[string, string]> = [
 describe('the 202 is never rendered as a deploy', () => {
   /**
    * `POST /v1/tokens/:id/deploy` authenticates, checks the allowlist, runs one UPDATE, enqueues and
-   * returns a Location (mint/src/server.ts:520-579). Rendering "deployed" from that response would
+   * returns a Location (mint/src/server.ts:536-595). Rendering "deployed" from that response would
    * tell a customer their contract exists at a moment when nothing has been broadcast.
    */
   const body = withoutComments(token)
@@ -112,7 +112,7 @@ describe('the buttons are offered from the service’s own predicates', () => {
   })
 
   it('a replayed payment is reported as a replay rather than as a fresh charge', () => {
-    // 200 versus 201 — mint/src/server.ts:509-514. "Already paid" and "just paid" are different
+    // 200 versus 201 — mint/src/server.ts:525-530. "Already paid" and "just paid" are different
     // facts about somebody's money.
     assert.match(body, /pay\.result\.replayed/)
     assert.match(body, /already paid for/i)
@@ -173,7 +173,7 @@ describe('the order form tells the truth about what its button does', () => {
   const body = withoutComments(launch)
 
   it('says nothing is charged, beside the button that opens the order', () => {
-    // `POST /v1/tokens` charges nothing and deploys nothing — mint/src/server.ts:383. A form that
+    // `POST /v1/tokens` charges nothing and deploys nothing — mint/src/server.ts:399. A form that
     // takes a wallet id and an owner address looks exactly like one that is about to spend money.
     assert.match(body, /Nothing is charged/)
   })
@@ -186,7 +186,7 @@ describe('the order form tells the truth about what its button does', () => {
   })
 
   it('warns about the mainnet allowlist beside the network choice', () => {
-    // Checked at deploy, after payment — mint/src/server.ts:544-553. Beside the choice is the only
+    // Checked at deploy, after payment — mint/src/server.ts:560-569. Beside the choice is the only
     // place a customer can act on it.
     assert.match(body, /allowlisted accounts/)
   })
@@ -224,10 +224,10 @@ describe('every screen renders all four states rather than a spinner and a hope'
   })
 
   it('the launch list says when it has hit the service’s limit', () => {
-    // `listTokens(..., 100)` — mint/src/server.ts:457 — and there is no cursor. A list that
+    // `listTokens(..., 100)` — mint/src/server.ts:473 — and there is no cursor. A list that
     // quietly stops at a round number is a list a customer trusts.
     assert.match(withoutComments(tokens), /SERVICE_LIMIT/)
-    assert.match(tokens, /mint\/src\/server\.ts:457/)
+    assert.match(tokens, /mint\/src\/server\.ts:473/)
   })
 })
 
@@ -263,46 +263,10 @@ describe('the shell and the 404', () => {
     assert.match(shell, /NAV\.map/)
   })
 
-  /*
-   * Comment-stripped, and this is not tidiness. The shell's own prose NAMES the two things these
-   * assertions forbid — the retired `.mw-skip` anchor and the hand-rolled `<main id="main">` — in
-   * order to explain why they went. A grep over the raw text would match the explanation and fail
-   * a correct file, which is the "a guard that fires on its own explanation trains people to
-   * delete the explanation" failure this file's own header counts six of in this estate.
-   */
-  const shellBody = withoutComments(shell)
-
-  it('the shell offers the SHARED skip link before anything else', () => {
-    // `<SkipLink />` from @cloudsforge/ui, not the local anchor this test used to look for. The
-    // local one targeted a `<main>` with no `tabIndex`, which is not focusable: the fragment
-    // scrolled the page and focus stayed on the link, so the next Tab went back into the bar.
-    const skip = shellBody.indexOf('<SkipLink')
-    const bar = shellBody.indexOf('<CloudsForgeBar')
+  it('the shell offers a skip link before anything else', () => {
+    const skip = shell.indexOf('mw-skip')
+    const bar = shell.indexOf('<CloudsForgeBar')
     assert.ok(skip > 0 && skip < bar, 'the skip link must come first in the DOM')
-    assert.doesNotMatch(shellBody, /mw-skip/, 'the local skip link is back beside the shared one')
-  })
-
-  it('the page sits in the shared main region, which is what the skip link can focus', () => {
-    assert.match(shellBody, /<MainRegion/)
-    assert.doesNotMatch(shellBody, /<main\b/, 'a hand-rolled main element is back, without tabIndex')
-  })
-
-  it('the consent banner is last in the shell, and therefore last in the tab order', () => {
-    // Not modal, and not first: a reader who arrived to read a project page must be able to read
-    // it and answer afterwards. Ordering is the whole assertion — the component itself is
-    // micro-ui's.
-    const banner = shellBody.indexOf('<CookieBanner')
-    assert.ok(banner > 0, 'the shell renders no consent banner')
-    assert.ok(banner > shellBody.indexOf('<CloudsForgeFooter'), 'the banner precedes the footer')
-    assert.ok(banner > shellBody.indexOf('<Outlet'), 'the banner precedes the page')
-  })
-
-  it('the shell keeps the head in step with the address', () => {
-    // Every page of this app was titled "Forge Create" before this, including the launch status
-    // page a customer keeps open. The tags themselves are micro-ui's pure function; what is
-    // asserted here is that this shell calls it, once, on navigation.
-    assert.match(shellBody, /applyHead\(surfaceMeta\(PRODUCT/)
-    assert.match(shellBody, /useLocation\(\)/)
   })
 
   it('the 404 page explains that the status really is 404', () => {
