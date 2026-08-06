@@ -209,8 +209,8 @@ body {
 }
 
 .wt-state--empty {
-  /* --cf-line and --cf-danger, not --cf-border and --cf-critical. The template names two custom
-     properties that tokens.css does not define, so every failure and forbidden state in every
+  /* --cf-line and --cf-danger, not --cf-border. The template names a custom
+     property that tokens.css does not define, so every failure and forbidden state in every
      frontend cut from it falls back to a hard-coded hex and a hard-coded rgba — which is exactly
      the "does not follow the substrate" defect the header of this file forbids, shipped in the
      template itself. Reported to micro-web-template; corrected here, and pinned by the

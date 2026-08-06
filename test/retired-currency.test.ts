@@ -58,12 +58,12 @@
  * It went green on 2026-08-05 because the SERVICE changed, which is the only thing that could
  * have made it go green honestly. `mint/src/migrations.ts:258` (migration 6,
  * `retire_shard_pricing`) makes an order durable in US cents and settled in EMBER — the shape
- * `billing/src/migrations.ts:543` already took — and `mint/src/server.ts:361-367` removed
+ * `billing/src/migrations.ts:543` already took — and `mint/src/server.ts:377-383` removed
  * `priceShards` from the wire rather than re-basing it. This bundle followed at `src/lib/mint.ts`
  * and `src/lib/format.ts`.
  *
  * One thing did NOT change, and it is the boundary: an order paid before the migration still
- * carries `chargeAssetCode: 'SHARD'` (`mint/src/server.ts:670-673`), and
+ * carries `chargeAssetCode: 'SHARD'` (`mint/src/server.ts:739-742`), and
  * `src/lib/format.ts`'s `charge()` renders that verbatim. That is a receipt for a debit that
  * really happened in SHARD, not a price anybody is being offered. The screens this file mounts are
  * the LIVE ones, quoted in USD and settled in EMBER; if a future fixture is added here that is
@@ -311,7 +311,7 @@ describe('retired currency never reaches a screen', () => {
               `${surface.name} renders "${hit?.[0]}" — ${code} is retired ` +
                 `(contracts/packages/chain/src/index.ts:58). Forge Create quotes in US cents and ` +
                 `settles in EMBER, displayed in Sparks when the service supplies them ` +
-                `(mint/src/migrations.ts:258, mint/src/server.ts:676-681). Before reaching for the ` +
+                `(mint/src/migrations.ts:258, mint/src/server.ts:745-750). Before reaching for the ` +
                 `copy: check what the SERVICE sent. This screen said Shards for a day after the ` +
                 `asset was retired, and it was telling the truth — the fix was migrating ` +
                 `micro-mint, not editing the sentence. If the word is true again, it is true ` +

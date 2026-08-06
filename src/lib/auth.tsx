@@ -2,19 +2,19 @@
  * Session state for the tree, and the gate in front of the routes that need one.
  *
  * Hiding a route is NOT the security boundary — `mint` verifies the bearer on every route that
- * needs one (`authenticate`, `mint/src/server.ts:697`), and `ownedToken` answers 404 for another
- * customer's order (`mint/src/server.ts:633-650`). This exists so that a signed-out customer is
+ * needs one (`authenticate`, `mint/src/server.ts:766`), and `ownedToken` answers 404 for another
+ * customer's order (`mint/src/server.ts:702-719`). This exists so that a signed-out customer is
  * sent to sign in instead of being shown a screen made entirely of 401s.
  *
  * **Two routes are deliberately outside the gate**, because the service put them outside it:
- * `GET /v1/catalogue` (`mint/src/server.ts:358`) and `GET /v1/tokens/:id/page`
- * (`mint/src/server.ts:607`) make no `authenticate()` call at all. See `src/lib/routes.ts`.
+ * `GET /v1/catalogue` (`mint/src/server.ts:374`) and `GET /v1/tokens/:id/page`
+ * (`mint/src/server.ts:623`) make no `authenticate()` call at all. See `src/lib/routes.ts`.
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * ── The `/auth/me` shape ──────────────────────────────────────────────────────────────────────
  *
  * Identity answers `{ user: {...}, session: {...}, organisations: [...] }` — the profile is
- * NESTED under `user`. The route is `identity/src/server.ts:891-903` and the body is built by
+ * NESTED under `user`. The route is `identity/src/server.ts:972-984` and the body is built by
  * `toPublicUser` at `identity/src/users.ts:52-63`; both citations were re-read against the source
  * for this repository rather than carried over.
  *

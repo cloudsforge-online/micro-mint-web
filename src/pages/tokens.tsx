@@ -1,13 +1,13 @@
 /**
- * Your launches. `GET /v1/tokens` — `mint/src/server.ts:452`.
+ * Your launches. `GET /v1/tokens` — `mint/src/server.ts:468`.
  *
  * The service returns at most 100 rows (`listTokens(deps.sql, userSubject(userId), 100)`,
- * `server.ts:457`) and takes NO cursor: there is no pagination to offer, and pretending otherwise
+ * `server.ts:473`) and takes NO cursor: there is no pagination to offer, and pretending otherwise
  * with a "next" button that cannot work would be worse than saying so. The list says it is capped
  * when it is full, because a customer with 100 launches would otherwise never learn that the
  * hundred-and-first is missing.
  *
- * The `userId` query parameter the handler reads (`server.ts:455-456`) is not exposed by this app;
+ * The `userId` query parameter the handler reads (`server.ts:471-472`) is not exposed by this app;
  * see the note on `listOrders` in src/lib/mint.ts.
  */
 import { Link } from 'react-router-dom'
@@ -18,7 +18,7 @@ import { listOrders, type TokenOrder } from '../lib/mint.ts'
 import { chainName, shortId, statusTone, timestamp } from '../lib/format.ts'
 import { displaySupply } from '../lib/launch.ts'
 
-/** `mint/src/server.ts:457` passes 100 as the limit. */
+/** `mint/src/server.ts:473` passes 100 as the limit. */
 const SERVICE_LIMIT = 100
 
 export function TokensPage() {
@@ -106,7 +106,7 @@ export function TokensPage() {
                 ▲
               </span>
               This is the most recent {SERVICE_LIMIT} launches, which is the maximum the service
-              returns (mint/src/server.ts:457). It takes no page cursor, so older launches cannot be
+              returns (mint/src/server.ts:473). It takes no page cursor, so older launches cannot be
               listed here yet — open one by its address if you have it.
             </p>
           )}

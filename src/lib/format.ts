@@ -130,7 +130,7 @@ export function statusTone(status: TokenStatus): Tone {
       // `mint/src/tokens.ts:52` makes this TERMINAL, and `CLAIMABLE` (`tokens.ts:68-73`) leaves it
       // out deliberately — re-claiming a failed row immediately is what makes a double mint
       // reachable. Saying "will not retry automatically" is the service's own wording
-      // (`mint/src/server.ts:535`), and it is the honest thing to put in front of a customer.
+      // (`mint/src/server.ts:551`), and it is the honest thing to put in front of a customer.
       return {
         tone: 'crit',
         glyph: '■',
@@ -315,7 +315,7 @@ export function usd(cents: string | null | undefined): string | null {
  * for one. `test/retired-currency.test.ts` forbids retired currency on the live surface and this
  * does not breach it: the live surface quotes USD and settles EMBER, and what this prints for an
  * archived order is a receipt for a debit micro-ledger really recorded in SHARD. Relabelling it
- * EMBER would be a false statement about money — the same trade `mint/src/server.ts:670-673`
+ * EMBER would be a false statement about money — the same trade `mint/src/server.ts:739-742`
  * refuses from the other side of the wire, and the reason the screens could not be fixed by
  * relabelling in the first place.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
