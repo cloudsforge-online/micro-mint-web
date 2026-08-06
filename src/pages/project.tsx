@@ -37,21 +37,21 @@ export function ProjectPage() {
   const page = useResource<RenderedPage>(
     (signal) => getProjectPage(id, signal),
     () => 1,
-    'This project page could not be loaded.',
+    'This project page could not be fetched.',
     [id],
   )
 
-  if (page.state === 'loading') return <Loading label="Reading this project" />
+  if (page.state === 'loading') return <Loading label="Fetching this project" />
   if (page.error) {
     return (
       <Failed
         notice={page.error}
         onRetry={page.reload}
-        title="No project at this address"
+        title="Nothing is published at this address"
       />
     )
   }
-  if (!page.data) return <Loading label="Reading this project" />
+  if (!page.data) return <Loading label="Fetching this project" />
 
   const { token, page: doc, onchain, risk, onchainUnavailable } = page.data
 
@@ -71,14 +71,14 @@ export function ProjectPage() {
 
       <section className="mw-panel" aria-labelledby="chain">
         <h2 className="mw-panel__title" id="chain">
-          On chain
+          Measured on chain
         </h2>
         {onchain === null ? (
           // The absence names its cause. An absence with no explanation reads as a bug, and this
           // one is frequently not a bug at all: an unindexed contract and an indexer outage are
           // both legitimate and the reader is entitled to know which.
           <p className="mw-absent mw-absent--block">
-            {onchainUnavailable ?? 'Nothing has been observed on chain for this token.'}
+            {onchainUnavailable ?? 'No reading has been taken from a chain for this token.'}
           </p>
         ) : (
           <>
@@ -88,13 +88,13 @@ export function ProjectPage() {
                   {shortHash(onchain.contractAddress)}
                 </span>
               </Fact>
-              <Fact label="Total supply">
+              <Fact label="Tokens in existence">
                 <Maybe
                   value={onchain.totalSupply === null ? null : group(onchain.totalSupply)}
                   missing="not observed"
                 />
                 {onchain.decimals !== null && (
-                  <span className="mw-fact__sub">{onchain.decimals} decimals, on chain</span>
+                  <span className="mw-fact__sub">{onchain.decimals} decimals, as the contract reports them</span>
                 )}
               </Fact>
               <Fact label="Cap">
@@ -114,8 +114,9 @@ export function ProjectPage() {
               </Fact>
             </dl>
             <p className="mw-panel__note">
-              Every figure above was read from the chain, not from the launch order. The two agree
-              at the moment of deployment and can diverge at any time afterwards.
+              Each number here was taken from the contract itself. None of it comes from what the
+              launcher requested. Those two match on the day of deployment and are free to part
+              company from the next block onwards, which is why only one of them is shown to you.
             </p>
           </>
         )}
@@ -123,11 +124,11 @@ export function ProjectPage() {
 
       <section className="mw-panel" aria-labelledby="risk">
         <h2 className="mw-panel__title" id="risk">
-          Risk indicators
+          What the contract permits
         </h2>
         <p className="mw-panel__note">
-          Computed from the chain, not written by the project. “Not observed” means nobody has
-          looked — it does not mean no.
+          Worked out from the contract, never supplied by the people behind it. Where a line says
+          nothing was observed, treat it as a gap in the reading rather than as reassurance.
         </p>
         <ul className="mw-risks">
           {riskLines(risk).map((r) => (
@@ -144,28 +145,29 @@ export function ProjectPage() {
 
       <section className="mw-panel" aria-labelledby="about">
         <h2 className="mw-panel__title" id="about">
-          From the project
+          In their own words
         </h2>
         {doc === null ? (
           <p className="mw-absent mw-absent--block">
-            This project has not published a description.
+            Nobody has written anything here about this token.
           </p>
         ) : (
           <>
             <p className="mw-panel__note">
-              Written by whoever launched this token, and not checked by CloudsForge. Verification
-              status: <code className="cf-num">{doc.verificationStatus}</code>.
+              Supplied by whoever launched this token and not checked by CloudsForge. Weigh it as
+              you would any other claim made by a seller. Verification status:{' '}
+              <code className="cf-num">{doc.verificationStatus}</code>.
             </p>
             {doc.description.length > 0 ? (
               <p className="mw-prose">{doc.description}</p>
             ) : (
-              <p className="mw-absent mw-absent--block">No description.</p>
+              <p className="mw-absent mw-absent--block">Left blank.</p>
             )}
-            <h3 className="mw-panel__subtitle">Risk disclosures</h3>
+            <h3 className="mw-panel__subtitle">Risks they have declared</h3>
             {doc.riskDisclosures.length > 0 ? (
               <p className="mw-prose">{doc.riskDisclosures}</p>
             ) : (
-              <p className="mw-absent mw-absent--block">None given.</p>
+              <p className="mw-absent mw-absent--block">None declared.</p>
             )}
           </>
         )}

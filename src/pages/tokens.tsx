@@ -25,23 +25,27 @@ export function TokensPage() {
   const orders = useResource<{ tokens: readonly TokenOrder[] }>(
     (signal) => listOrders(signal),
     (data) => data.tokens.length,
-    'Your launches could not be loaded.',
+    'Your launches could not be fetched.',
   )
 
   return (
     <>
       <header className="mw-head">
         <h1 className="mw-head__title">Your launches</h1>
+        <p className="mw-head__lede">
+          Every token you have started here, whether it reached a chain or not. Select one to pay for
+          it, send it, watch each step of the deploy, or edit the page the public reads about it.
+        </p>
       </header>
 
-      {orders.state === 'loading' && <Loading label="Reading your launches" />}
+      {orders.state === 'loading' && <Loading label="Fetching your launches" />}
       {(orders.state === 'failed' || orders.state === 'forbidden') && orders.error && (
-        <Failed notice={orders.error} onRetry={orders.reload} title="That list did not load" />
+        <Failed notice={orders.error} onRetry={orders.reload} title="Your launches are not on screen" />
       )}
       {orders.state === 'empty' && (
         <Empty
-          title="No launches yet"
-          hint="An order opens here the moment you start one. Nothing is charged until you pay for it."
+          title="You have not started a token"
+          hint="Fill in the form and a draft appears here straight away. Your wallet stays untouched until you choose to pay for a deploy."
           action={
             <Link className="cf-btn cf-btn--primary" to="/launch">
               Launch a token
@@ -55,17 +59,17 @@ export function TokensPage() {
           <div className="mw-tablewrap">
             <table className="mw-table">
               <caption className="mw-table__caption">
-                Newest first, which is the order the service returns them in
-                (`order by created_at desc`, mint/src/tokens.ts). Select a row for its status,
-                its payment and every deploy attempt.
+                Most recent at the top, which is how the service hands them over
+                (`order by created_at desc`, mint/src/tokens.ts). Open a row to see where it has
+                got to, what it cost, and each step of its deploy.
               </caption>
               <thead>
                 <tr>
                   <th scope="col">Token</th>
                   <th scope="col">Chain</th>
                   <th scope="col">Supply</th>
-                  <th scope="col">State</th>
-                  <th scope="col">Opened</th>
+                  <th scope="col">Where it is</th>
+                  <th scope="col">Started</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,9 +113,10 @@ export function TokensPage() {
               <span className="mw-note__icon" aria-hidden="true">
                 ▲
               </span>
-              This is the most recent {SERVICE_LIMIT} launches, which is the maximum the service
-              returns (mint/src/server.ts). It takes no page cursor, so older launches cannot be
-              listed here yet — open one by its address if you have it.
+              You are looking at your {SERVICE_LIMIT} most recent launches, which is as many as the
+              service will hand over in one go (mint/src/server.ts). It accepts no paging
+              instruction, so anything older is reachable only by its own address. If you kept the
+              link, it still works.
             </p>
           )}
         </>

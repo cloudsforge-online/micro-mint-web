@@ -66,7 +66,7 @@ describe('the 202 is never rendered as a deploy', () => {
   const body = withoutComments(token)
 
   it('the acceptance copy says accepted and queued, not deployed', () => {
-    assert.match(body, /Accepted, and queued/)
+    assert.match(body, /Taken, and put in the queue/)
     assert.match(body, /Nothing has reached a chain yet/)
   })
 
@@ -102,8 +102,8 @@ describe('the buttons are offered from the service’s own predicates', () => {
   it('a hidden deploy button is replaced by the reason, not by nothing', () => {
     // A disabled control with no explanation is how a customer concludes the site is broken.
     assert.match(body, /whyNotDeployable\(token\)/)
-    assert.match(body, /will not be retried automatically/)
-    assert.match(body, /has not been paid for/)
+    assert.match(body, /no background job will pick it up again/)
+    assert.match(body, /Settle the charge above/)
   })
 
   it('both buttons are disabled while their request is in flight', () => {
@@ -115,7 +115,7 @@ describe('the buttons are offered from the service’s own predicates', () => {
     // 200 versus 201 — mint/src/server.ts. "Already paid" and "just paid" are different
     // facts about somebody's money.
     assert.match(body, /pay\.result\.replayed/)
-    assert.match(body, /already paid for/i)
+    assert.match(body, /had already settled this launch/i)
   })
 })
 

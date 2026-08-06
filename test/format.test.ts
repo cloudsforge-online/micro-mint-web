@@ -61,7 +61,7 @@ describe('every state has a word, a glyph and a sentence', () => {
   it('says a failed launch will not be retried, in the service’s own words', () => {
     // `mint/src/server.ts`, and `CLAIMABLE` at `tokens.ts`. A customer told only "failed"
     // will wait for a retry that a background job deliberately never performs.
-    assert.match(statusTone('failed').meaning, /will not be retried automatically/)
+    assert.match(statusTone('failed').meaning, /no background job will pick it up again/)
   })
 
   it('never says "deployed" for a state that has not reached a chain', () => {

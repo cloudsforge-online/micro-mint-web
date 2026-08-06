@@ -196,7 +196,7 @@ describe('BJ-CRE — Forge Create', () => {
         await s.click(s.byRole('button', 'Deploy'))
         await s.settle(30)
 
-        assert.match(s.text(), /accepted/i, 'the 202 was not reported as an acceptance')
+        assert.match(s.text(), /put in the queue/i, 'the 202 was not reported as an acceptance')
         assert.match(s.text(), /nothing has reached a chain yet/i)
         // And the STATE the page claims is still the order's own. Asserted on the badge rather
         // than by grepping the prose, because the page legitimately contains the word "deployed"
@@ -211,7 +211,7 @@ describe('BJ-CRE — Forge Create', () => {
             'status URL; nothing has been broadcast.',
         )
         // The chain facts are still absent, because there are none yet.
-        assert.match(s.text(), /nothing broadcast yet/i)
+        assert.match(s.text(), /nothing has been sent to a node/i)
       },
     )
   })
@@ -313,8 +313,8 @@ describe('BJ-CRE — Forge Create', () => {
         await s.settle(30)
         // 200 versus 201 is a real difference and the service exposes it deliberately. "Already
         // paid" and "just paid" are different facts about somebody's money.
-        assert.match(s.text(), /already paid for/i)
-        assert.match(s.text(), /nothing was charged a second time/i)
+        assert.match(s.text(), /had already settled this launch/i)
+        assert.match(s.text(), /no second debit was taken/i)
         const alerts = [...s.document.querySelectorAll('[role="alert"]')]
         assert.deepEqual(
           alerts.map((a) => s.textOf(a)),
@@ -456,7 +456,7 @@ describe('a service that could not be reached says so', () => {
         // The price line is conditional on `catalogue.data`, so before this branch existed a 503
         // rendered as an ordinary page with no cost on it — and a page with no cost on it looks
         // exactly like a page whose product is free. The failure has to be visible.
-        assert.match(s.text(), /price could not be read|temporarily unavailable/i,
+        assert.match(s.text(), /not being reported|temporarily unavailable/i,
           'the catalogue was down and the form said nothing about it, so the absent price reads ' +
             'as the whole truth about what this costs')
         assert.match(s.text(), /req-cat-503/, 'no request id to quote for the outage')
@@ -490,7 +490,7 @@ describe('a service that could not be reached says so', () => {
           /no launches yet/i,
           'an unreachable service was rendered as an authoritative "you have nothing"',
         )
-        assert.match(s.text(), /did not load|could not be loaded/i, 'the outage is not stated')
+        assert.match(s.text(), /not on screen|could not be fetched/i, 'the outage is not stated')
       },
     )
   })
@@ -638,7 +638,7 @@ describe('BJ-ADV — the adversarial matrix', () => {
         // that alternation was green because the retired word was on screen — one of the four
         // assertions that pinned the defect in place. `fx.order({ status: 'paid' })` settles
         // 500,000,000 Sparks (test/fixtures.ts), so this reads back what the fixture charged.
-        assert.match(s.text(), /paid\. 500,000,000 sparks has been debited|the ledger entry is/i)
+        assert.match(s.text(), /500,000,000 sparks has left your wallet|your receipt in the ledger is/i)
       },
     )
   })
@@ -709,7 +709,7 @@ describe('BJ-ADV — the adversarial matrix', () => {
         allowEmpty: true,
       },
       async (s) => {
-        assert.match(s.text(), /reading this launch/i, 'the slow read is not marked pending')
+        assert.match(s.text(), /fetching this launch/i, 'the slow read is not marked pending')
         await s.settle(80)
         assert.ok(s.text().includes('Test Token'), 'the slow read never landed')
       },
