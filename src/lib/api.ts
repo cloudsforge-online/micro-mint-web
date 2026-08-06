@@ -259,7 +259,7 @@ export interface RequestOptions {
    * `withIdempotentRoute` wrapper and no header read anywhere in `mint/src/server.ts`, and the two
    * mutations that need protection get it from state instead — `pay` runs one conditional UPDATE
    * guarded by `and status = 'awaiting_payment'` (`mint/src/tokens.ts:326-332`) and `deploy`
-   * enqueues with `onConflict: 'keep'` (`mint/src/server.ts:558-563`). See src/lib/mint.ts.
+   * enqueues with `onConflict: 'keep'` (`mint/src/server.ts:574-579`). See src/lib/mint.ts.
    *
    * `authorization` and `content-type` are set by this function AFTER these are spread, so a
    * caller cannot accidentally drop the bearer token by passing a header map of its own.

@@ -51,6 +51,22 @@ const SURFACE: ReadonlyArray<{ method: string; path: string; line: number; authe
   { method: 'GET', path: '/v1/tokens/:id/page', line: 623, authenticates: false },
 ]
 
+/**
+ * Routes mint serves that this bundle deliberately does NOT call, each with the reason.
+ *
+ * Enumerated rather than ignored, so the "knows about everything it does" check below stays exact
+ * in both directions: a route nobody has read should make somebody look, and a route somebody has
+ * read and declined should not.
+ */
+const DECLINED: ReadonlyArray<{ method: string; path: string; line: number; why: string }> = [
+  {
+    method: 'POST',
+    path: '/v1/events',
+    line: 644,
+    why: 'HMAC webhook — the credential is the MAC, and a browser holds no signing secret',
+  },
+]
+
 const client = readFileSync(here('src/lib/mint.ts'), 'utf8')
 
 describe('the client calls only routes it has cited', () => {
@@ -116,7 +132,22 @@ describe('the cited lines are the lines that register the routes', () => {
       .filter((m): m is RegExpExecArray => m !== null)
       .map((m) => `${m[1]} ${m[2]}`)
       .filter((r) => r.includes('/v1/'))
-    const known = SURFACE.map((r) => `${r.method} ${r.path}`)
+    // DECLINED is data like SURFACE, so it is held to the same bar — an unverified exemption list
+    // is just a way to silence this check.
+    for (const route of DECLINED) {
+      const line = lines[route.line - 1] ?? ''
+      assert.match(
+        line,
+        new RegExp(`define\\('${route.method}',\\s*'${route.path.replace(/[/:]/g, '\\$&')}'`),
+        `mint/src/server.ts:${route.line} is:\n  ${line.trim()}`,
+      )
+    }
+    // And the stated reason is the real one: the webhook declines on a bad MAC, not on a bearer.
+    const events = lines.slice(643, 660).join('\n')
+    assert.match(events, /verifyEventSignature\(raw, deps\.eventAcceptSecrets, presented\)/)
+    assert.match(events, /errorReply\(403, 'bad_signature'/)
+
+    const known = [...SURFACE, ...DECLINED].map((r) => `${r.method} ${r.path}`)
     assert.deepEqual(
       registered.filter((r) => !known.includes(r)),
       [],
