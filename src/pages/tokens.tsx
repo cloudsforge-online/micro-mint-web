@@ -59,9 +59,8 @@ export function TokensPage() {
           <div className="mw-tablewrap">
             <table className="mw-table">
               <caption className="mw-table__caption">
-                Most recent at the top, which is how the service hands them over
-                (`order by created_at desc`, mint/src/tokens.ts). Open a row to see where it has
-                got to, what it cost, and each step of its deploy.
+                Most recent at the top, which is how the service hands them over. Open a row to
+                see where it has got to, what it cost, and each step of its deploy.
               </caption>
               <thead>
                 <tr>
@@ -114,8 +113,8 @@ export function TokensPage() {
                 ▲
               </span>
               You are looking at your {SERVICE_LIMIT} most recent launches, which is as many as the
-              service will hand over in one go (mint/src/server.ts). It accepts no paging
-              instruction, so anything older is reachable only by its own address. If you kept the
+              service will hand over in one go. It accepts no paging instruction, so anything
+              older is reachable only by its own address. If you kept the
               link, it still works.
             </p>
           )}

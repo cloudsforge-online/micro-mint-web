@@ -203,8 +203,7 @@ export function TokenPage() {
               {shortHash(token.paidJournalEntryId)}
             </code>
             . Your balance moved and this order advanced inside a single database transaction, so
-            one cannot have happened without the other
-            (mint/src/server.ts).
+            one cannot have happened without the other.
           </p>
         ) : (
           <p className="mw-panel__note">
@@ -335,14 +334,13 @@ export function TokenPage() {
           <p className="mw-panel__note">
             Nothing recorded so far. As the worker signs, broadcasts and then sees a confirmation,
             each of those becomes a row here with its own timestamp. It means “did this ever touch a
-            chain?” is a question you can answer by looking, without asking anyone to read a log
-            (mint/src/server.ts).
+            chain?” is a question you can answer by looking, without asking anyone to read a log.
           </p>
         ) : (
           <div className="mw-tablewrap">
             <table className="mw-table">
               <caption className="mw-table__caption">
-                Earliest at the top, in the order the service recorded them (mint/src/tokens.ts).
+                Earliest at the top, in the order the service recorded them.
               </caption>
               <thead>
                 <tr>
@@ -382,8 +380,7 @@ export function TokenPage() {
             Refresh
           </button>{' '}
           Refreshing only re-reads this order from the database. It sends nothing to a node, so
-          checking on progress cannot slow your deploy down
-          (mint/src/server.ts).
+          checking on progress cannot slow your deploy down.
         </p>
       </section>
 
@@ -432,8 +429,7 @@ function ProjectPageEditor({ tokenId, deployed }: { tokenId: string; deployed: b
         account. You write the words. The supply, the ceiling, the owner and the contract address on
         that page are measured from the chain by the CloudsForge indexer, never taken from your
         order — a plan shown as though it were a measurement is worse than no figure at all, because
-        a buyer has no way to tell the two apart
-        (mint/src/projectpages.ts).
+        a buyer has no way to tell the two apart.
       </p>
       {!deployed && (
         <p className="mw-panel__note">

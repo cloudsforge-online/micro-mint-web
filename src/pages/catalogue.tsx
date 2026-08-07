@@ -129,8 +129,8 @@ export function CataloguePage() {
               held in dollars and converted to{' '}
               <code className="cf-num">{catalogue.data.settlementAsset}</code> using the exchange
               rate read inside that request, which is then written onto your order so the receipt and
-              the debit can never disagree. Filling in the form and opening an order costs nothing
-              (<code className="cf-num">POST /v1/tokens</code>, mint/src/server.ts).
+              the debit can never disagree. Filling in the form and opening an order costs
+              nothing.
               {/* The service's default network, which the order form pre-selects. Rendered because
                   a catalogue that does not say which network it priced is describing two
                   different products at one price. */}{' '}
@@ -197,8 +197,7 @@ export function CataloguePage() {
               Pressing deploy does not hold your browser open while a chain is written to. The
               request comes straight back with an address to watch, and the signing, broadcast and
               confirmation are recorded on that page one line at a time as they happen. Close the tab
-              and come back to it; the work is not tied to your connection
-              (mint/src/server.ts).
+              and come back to it; the work is not tied to your connection.
             </p>
           </section>
 
