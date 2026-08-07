@@ -183,7 +183,12 @@ export function TokenPage() {
               <span className="cf-num">{charge(token)}</span>
             )}
           </Fact>
-          <Fact label="Opened">{timestamp(token.createdAt)}</Fact>
+          {/* The third value in a stacked column whose other two — the quote and the charge — are
+              already tabular. A date set in proportional figures beneath them is the one that
+              looks misaligned. */}
+          <Fact label="Opened">
+            <span className="cf-num">{timestamp(token.createdAt)}</span>
+          </Fact>
         </dl>
       </section>
 
@@ -362,7 +367,9 @@ export function TokenPage() {
                     <td className="cf-num" title={attempt.txHash ?? undefined}>
                       {shortHash(attempt.txHash)}
                     </td>
-                    <td>{timestamp(attempt.at)}</td>
+                    {/* A column of digits read down the page: tabular figures, from the design
+                        system's class rather than a local font-variant-numeric. */}
+                    <td className="cf-num">{timestamp(attempt.at)}</td>
                   </tr>
                 ))}
               </tbody>

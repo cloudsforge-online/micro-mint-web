@@ -10,18 +10,52 @@
 
   'warm' is the ash ramp the brand marks in brand/assets/create/ are drawn on, and the one every
   other product frontend in the estate uses.
+
+  data-cf-scheme is the third of the three, added with @cloudsforge/ui 1.1. `auto` follows the
+  reader's operating system; `light` and `dark` force one. It is set here, statically, for the same
+  reason the other two are — a page that paints before the attribute lands flashes the default and
+  then changes colour, and a theme flash is worse than a theme nobody asked for.
+
+  This surface never carried a light mode of its own, so there is nothing here to delete: it goes
+  from dark-only to following the reader, and every semantic pair it uses is measured on both
+  schemes upstream rather than on the one this repository happened to check.
 -->
-<html lang="en-GB" data-cf-product="create" data-cf-substrate="warm">
+<html lang="en-GB" data-cf-product="create" data-cf-substrate="warm" data-cf-scheme="auto">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="colour-scheme" content="dark" />
+    <!--
+      `color-scheme`, spelled the way the standard spells it.
+
+      This line used to read `<meta name="colour-scheme" content="dark" />`, which is not a meta
+      name any browser knows: the house voice is British everywhere else in this repository, and it
+      leaked into the one string that belongs to a specification rather than to us. The tag did
+      nothing at all — form controls, scrollbars and the canvas were drawn light while the page
+      was painted dark, which is exactly the mismatch this declaration exists to prevent.
+
+      Both schemes are declared now, because `data-cf-scheme="auto"` above means the palette
+      follows the reader. `color-scheme` tells the BROWSER which chrome to draw; `data-cf-scheme`
+      tells @cloudsforge/ui which palette to resolve. Declaring only `dark` here would leave a
+      reader in a light environment fighting the page rather than being served by it.
+    -->
+    <meta name="color-scheme" content="dark light" />
     <!--
       The build that produced this bundle. Stamped by the Dockerfile, read by src/lib/obs.ts, and
       the reason an error report can be pinned to the deploy that introduced it. It is an identity
       rather than a configuration: it names the artefact, it does not tell it where it is running.
     -->
     <meta name="cf-release" content="dev" />
+    <!--
+      THE GOOGLE ANALYTICS MEASUREMENT ID, AND NOT THE GOOGLE ANALYTICS TAG.
+      ────────────────────────────────────────────────────────────────────────────────────────
+      There is deliberately no analytics <script> anywhere in this file, and there must never be
+      one. The stock snippet Google hands you fetches a third-party script and sets `_ga` on load
+      — before any banner has been drawn, let alone answered — and under ePrivacy Art. 5(3) an
+      analytics cookie set before consent is a violation that a banner underneath it does not
+      cure. `@cloudsforge/ui/consent` injects the tag from exactly one place: the Accept button,
+      and the whole argument is written out in the header of that module rather than repeated
+      here. This estate is separately under GDPR review and custodies other people's money, which
+      makes "we will tidy the analytics later" the wrong order to do things in.
 
       Neither the vendor's hostname nor its global function is spelled anywhere in this file, so
       a grep for either over the SERVED document answers zero — which is the check a reviewer
@@ -65,7 +99,7 @@
     -->
     <meta
       name="description"
-      content="Launch a token on Ember, Ethereum or Solana: pick the contract, pay in Shards, deploy, and publish a project page a buyer can check against the chain."
+      content="Launch a token on Ember, Ethereum or Solana: pick the contract, pay a price quoted in US dollars and settled in EMBER, deploy, and publish a project page a buyer can check against the chain."
     />
 
     <!--
@@ -94,7 +128,7 @@
     <meta property="og:title" content="Forge Create" />
     <meta
       property="og:description"
-      content="Launch a token, cross-chain. Pick the contract, pay in Shards, deploy, and publish a project page checked against the chain."
+      content="Launch a token, cross-chain. Pick the contract, pay in EMBER at a price quoted in US dollars, deploy, and publish a project page checked against the chain."
     />
     <meta property="og:image" content="/og-1200x630.png" />
 
