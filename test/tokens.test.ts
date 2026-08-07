@@ -133,6 +133,27 @@ describe('the stylesheet names only tokens that exist', () => {
         assert.ok(defined.has(right), `${right} is not defined; the stylesheet is built on it`)
       }
     })
+
+    it('every severity carries a non-text step AND a text step, and they are different names', () => {
+      // The rule that replaced "--cf-critical does not exist". A `color:` takes the `-text` step;
+      // a border or a background takes the bare one.
+      for (const level of ['good', 'warn', 'critical']) {
+        assert.ok(defined.has(`--cf-${level}`), `--cf-${level} is missing`)
+        assert.ok(defined.has(`--cf-${level}-text`), `--cf-${level}-text is missing`)
+      }
+    })
+
+    it('the two aliases this stylesheet sets text in point at the TEXT steps', () => {
+      /*
+       * `--cf-danger` and `--cf-success` survive as aliases of `--cf-critical-text` and
+       * `--cf-good-text` (tokens.css), deliberately: every existing `color: var(--cf-danger)`
+       * in the estate became AA-compliant without the repository using it being touched, and every
+       * existing border use kept clearing the non-text floor it needs. src/styles.css sets text in
+       * `--cf-danger` twice, so this is the assertion that keeps those two legible.
+       */
+      assert.match(tokens, /--cf-success:\s*var\(--cf-good-text\)/)
+      assert.match(tokens, /--cf-danger:\s*var\(--cf-critical-text\)/)
+    })
   }
 })
 

@@ -110,14 +110,15 @@ export function LaunchPage() {
   return (
     <>
       <header className="mw-head">
-        <h1 className="mw-head__title">Launch a token</h1>
+        <h1 className="mw-head__title">Describe your token</h1>
         <p className="mw-head__lede">
-          This opens an order. Nothing is charged and nothing is deployed until you pay for it on
-          the next screen.
+          Everything below becomes a constructor argument. Filling it in creates a draft order and
+          moves no money: Nothing is charged by this form, and no contract exists until you pay on
+          the following screen and press deploy.
         </p>
       </header>
 
-      {catalogue.state === 'loading' && <Loading label="Reading the catalogue" />}
+      {catalogue.state === 'loading' && <Loading label="Fetching the price" />}
       {/*
         An unreachable catalogue used to render as NOTHING: the price line is `{catalogue.data &&
         ...}` and there was no other branch, so a 503 left a customer filling in a form that never
@@ -135,7 +136,7 @@ export function LaunchPage() {
         <Failed
           notice={catalogue.error}
           onRetry={catalogue.reload}
-          title="The price could not be read"
+          title="The price is not on screen"
         />
       )}
       {catalogue.data && (
@@ -148,12 +149,12 @@ export function LaunchPage() {
                rule three comments up applies to this narrower absence too: the customer must not
                reach the pay screen having never been told a number. `usd()` returns null rather
                than "$0.00" precisely so this branch is reachable — see src/lib/format.ts. */
-            <>The price could not be read. Opening an order still charges nothing.</>
+            <>The price is not being reported right now. Opening a draft order still costs nothing, but read the figure on the payment screen before you agree to it.</>
           ) : (
             <>
-              Deploying costs <span className="cf-num">{usd(catalogue.data.priceUsdCents)}</span>,
-              charged in <span className="cf-num">{catalogue.data.settlementAsset}</span> when you
-              pay.
+              A deploy is <span className="cf-num">{usd(catalogue.data.priceUsdCents)}</span>, taken
+              from your wallet in <span className="cf-num">{catalogue.data.settlementAsset}</span> at
+              the moment you agree to it. Gas is on us.
             </>
           )}
         </p>
@@ -198,8 +199,9 @@ export function LaunchPage() {
             */}
             {draft.network === 'mainnet' && (
               <span className="mw-field__hint mw-field__hint--warn">
-                Mainnet deploys are limited to allowlisted accounts. The check happens when you
-                deploy — after payment — so confirm you are on the list before paying.
+                Only allowlisted accounts may deploy to mainnet, and that test is applied at the
+                deploy step, which comes after payment. Check that your account is on the list
+                before paying rather than afterwards.
               </span>
             )}
           </label>
@@ -210,7 +212,7 @@ export function LaunchPage() {
 
           <Field
             label="Name"
-            hint={`Up to ${MAX_NAME} characters.`}
+            hint={`The full name wallets will display. Up to ${MAX_NAME} characters.`}
             problem={showProblems ? problemFor('name')?.message : undefined}
           >
             <input
@@ -223,7 +225,7 @@ export function LaunchPage() {
 
           <Field
             label="Symbol"
-            hint="Two to twelve upper-case letters or digits."
+            hint="The short ticker, shown beside a balance. Two to twelve upper-case letters or digits."
             problem={showProblems ? problemFor('symbol')?.message : undefined}
           >
             <input
@@ -236,7 +238,7 @@ export function LaunchPage() {
 
           <Field
             label="Decimals"
-            hint={`0 to ${MAX_DECIMALS}. This changes how wallets DISPLAY a balance; it does not scale the supply below.`}
+            hint={`How far a balance is subdivided for display, 0 to ${MAX_DECIMALS}. Eighteen is the Ethereum habit. This affects presentation only — it does not multiply the figure you type below.`}
             problem={showProblems ? problemFor('decimals')?.message : undefined}
           >
             <input
@@ -249,7 +251,7 @@ export function LaunchPage() {
 
           <Field
             label="Initial supply, in the smallest unit"
-            hint="A whole number. This is the exact number of base units minted to the owner address."
+            hint="A whole number, passed to the constructor untouched. This many base units are created and sent to the owner address."
             problem={showProblems ? problemFor('supply')?.message : undefined}
           >
             <input
@@ -275,7 +277,7 @@ export function LaunchPage() {
                     className="cf-btn cf-btn--ghost mw-inline-btn"
                     onClick={() => set('supply', scaled)}
                   >
-                    Use {draft.supply} whole tokens instead
+                    I meant {draft.supply} whole tokens
                   </button>
                 </>
               )}
@@ -286,7 +288,8 @@ export function LaunchPage() {
         <fieldset className="mw-fieldset">
           <legend>The contract</legend>
           <p className="mw-fieldset__note">
-            Only an exact match is deployed. There is no nearest fit.
+            Your selection has to match one of the three contracts exactly. Nothing is rounded up to
+            the closest one.
           </p>
           <div className="mw-choices" role="radiogroup" aria-label="Contract">
             {OFFERED_FEATURE_SETS.map((set_) => {
@@ -307,8 +310,8 @@ export function LaunchPage() {
                   </span>
                   <span className="mw-choice__note">
                     {capRuleFor(set_.variant) === 'required'
-                      ? 'Needs a maximum supply'
-                      : 'Takes no maximum supply'}
+                      ? 'Requires a ceiling'
+                      : 'Has no ceiling to set'}
                   </span>
                 </label>
               )
@@ -323,7 +326,7 @@ export function LaunchPage() {
           {variant !== null && capRuleFor(variant) === 'required' && (
             <Field
               label="Maximum supply, in the smallest unit"
-              hint="The contract can never exceed this. It must be at least the initial supply."
+              hint="The hard limit the contract arithmetic will not cross. It has to be the initial supply or more."
               problem={showProblems ? problemFor('cap')?.message : undefined}
             >
               <input
@@ -341,7 +344,7 @@ export function LaunchPage() {
 
           <Field
             label="Owner address"
-            hint="The address that receives the supply and holds any owner key. A mistyped character here is a token nobody can control."
+            hint="This address is written into the constructor: it receives the whole initial supply and holds the owner role, if the contract you picked has one. Nobody at CloudsForge can change it afterwards, so a single wrong character produces a token you cannot reach."
             problem={showProblems ? problemFor('ownerAddress')?.message : undefined}
           >
             <input
@@ -357,9 +360,9 @@ export function LaunchPage() {
             // are debited from", and a hard-coded currency in a hint is exactly how the retired
             // one survived its own retirement; when there is no catalogue there is no asset to
             // name, so it says the generic thing rather than guessing at EMBER.
-            hint={`The CloudsForge wallet the ${
+            hint={`Which of your CloudsForge wallets the ${
               catalogue.data?.settlementAsset ?? 'settlement asset'
-            } is debited from when you pay.`}
+            } comes out of. This is about payment only — it has nothing to do with who owns the token.`}
             problem={showProblems ? problemFor('ownerWalletId')?.message : undefined}
           >
             <input
@@ -371,15 +374,16 @@ export function LaunchPage() {
         </fieldset>
 
         {create.error && (
-          <Failed notice={create.error} title="The order was not opened" />
+          <Failed notice={create.error} title="The draft was not saved" />
         )}
 
         <div className="mw-actions">
           <button type="submit" className="cf-btn cf-btn--primary" disabled={create.busy}>
-            {create.busy ? 'Opening the order…' : 'Open the order'}
+            {create.busy ? 'Creating…' : 'Create this launch'}
           </button>
           <span className="mw-actions__note">
-            Nothing is charged by this button. You pay on the next screen.
+            Nothing is charged by this button. It writes down what you asked for and takes you to the
+            page where you pay and then deploy.
           </span>
         </div>
       </form>

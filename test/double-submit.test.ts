@@ -391,7 +391,7 @@ describe('two clicks in one tick — Deploy', () => {
    Create — the one with no server-side guard at all
    ══════════════════════════════════════════════════════════════════════════════════════════ */
 
-describe('two submits in one tick — Open the order', () => {
+describe('two submits in one tick — Create this launch', () => {
   for (const mounting of BOTH_MOUNTINGS) {
     it(`opens exactly one order, ${mounting.label}`, async () => {
       await withScreen(
@@ -409,7 +409,7 @@ describe('two submits in one tick — Open the order', () => {
         async (s) => {
           await s.settle(20)
           await fillLaunchForm(s)
-          const commit = s.byRole('button', /Open the order/)
+          const commit = s.byRole('button', /Create this launch/)
           s.clickNoFlush(commit)
           s.clickNoFlush(commit)
           await s.settle(60)
@@ -429,10 +429,10 @@ describe('two submits in one tick — Open the order', () => {
 })
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
-   Save the project page — the same hook, the same tick
+   Publish this — the same hook, the same tick
    ══════════════════════════════════════════════════════════════════════════════════════════ */
 
-describe('two clicks in one tick — Save the project page', () => {
+describe('two clicks in one tick — Publish this', () => {
   for (const mounting of BOTH_MOUNTINGS) {
     it(`sends exactly one PUT, ${mounting.label}`, async () => {
       await withScreen(
@@ -451,7 +451,7 @@ describe('two clicks in one tick — Save the project page', () => {
         },
         async (s) => {
           await s.settle(20)
-          const save = s.byRole('button', /Save the project page/)
+          const save = s.byRole('button', /Publish this/)
           s.clickNoFlush(save)
           s.clickNoFlush(save)
           await s.settle(60)
@@ -484,7 +484,7 @@ describe('two clicks in one tick — Save the project page', () => {
       },
       async (s) => {
         await s.settle(20)
-        const save = s.byRole('button', /Save the project page/)
+        const save = s.byRole('button', /Publish this/)
         s.clickNoFlush(save)
         await s.settle(0)
         assert.ok(

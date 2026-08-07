@@ -23,6 +23,46 @@
     -->
     <meta name="cf-release" content="dev" />
 
+      Neither the vendor's hostname nor its global function is spelled anywhere in this file, so
+      a grep for either over the SERVED document answers zero — which is the check a reviewer
+      actually runs, and a comment quoting what it forbids is a comment that fails it.
+
+      It is a meta tag rather than a build-time environment variable because
+      test/no-build-time-config.test.ts greps for those and fails the build — an artefact with an
+      environment frozen into it is not the artefact that passed CI. (That test greps this file
+      too, which is why the prefix is not spelled out here.) This is the same mechanism
+      `cf-release` above already uses, and the ID is an identity rather than a configuration: it
+      names the property, it does not tell the bundle where it is running. An absent or empty
+      value means analytics is simply off, which is what a local `pnpm dev` gets.
+    -->
+    <meta name="cf-analytics" content="G-NB8DNLTKZQ" />
+
+    <!--
+      THE SHELL AND THE RENDERED PAGE ARE TWO DIFFERENT ARTEFACTS, AND THIS FILE IS THE ONE A
+      CRAWLER GETS.
+
+      `DocumentMeta` in src/components/shell.tsx applies per-route tags at runtime, which browsers
+      and the crawlers that execute JavaScript see. The link-preview fetchers used by chat and
+      social clients generally do not execute JavaScript, so THESE two sentences are what a person
+      reads before they arrive — in a search result, and in the card a link unfurls into.
+
+      ── WHY THEY NAME EMBER AND US DOLLARS ───────────────────────────────────────────────────
+      Both sentences named the RETIRED asset until 2026-08-06. It was retired on 2026-08-04
+      (`contracts/packages/chain/src/index.ts`) and micro-mint migrated on 2026-08-05
+      (`mint/src/migrations.ts`, migration 6): an order is DURABLE IN US CENTS and SETTLED IN
+      EMBER at the rate read inside the payment request. Every rendered screen was corrected then,
+      and `test/retired-currency.test.ts` mounts them and reads their text so it stays that way —
+      but that file reads RENDERED text on purpose, so it never looked here, and the two strings a
+      stranger reads BEFORE arriving were the last two saying the wrong thing about money.
+
+      The wording now matches what the code does: `src/lib/mint.ts` carries `priceUsdCents` and
+      `settlementAsset`, and `src/lib/format.ts` prints the quote with `usd()`.
+
+      `charge()` in that same module still prints the retired code for an order paid BEFORE the
+      migration, and that is correct and deliberately untouched: it is a receipt for a debit
+      micro-ledger really recorded that way, and relabelling it EMBER would be a false statement
+      about somebody's money.
+    -->
     <meta
       name="description"
       content="Launch a token on Ember, Ethereum or Solana: pick the contract, pay in Shards, deploy, and publish a project page a buyer can check against the chain."

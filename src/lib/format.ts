@@ -79,13 +79,13 @@ export interface Tone {
 export function statusTone(status: TokenStatus): Tone {
   switch (status) {
     case 'draft':
-      return { tone: 'mute', glyph: '○', word: 'DRAFT', meaning: 'Opened, not yet payable.' }
+      return { tone: 'mute', glyph: '○', word: 'DRAFT', meaning: 'Written down. There is nothing to pay yet.' }
     case 'awaiting_payment':
       return {
         tone: 'warn',
         glyph: '◷',
         word: 'AWAITING PAYMENT',
-        meaning: 'Nothing has been charged and nothing has been deployed.',
+        meaning: 'Your wallet is untouched and no contract exists. Paying is the next step.',
       }
     case 'paid':
       return {
@@ -96,35 +96,35 @@ export function statusTone(status: TokenStatus): Tone {
         tone: 'good',
         glyph: '✓',
         word: 'PAID',
-        meaning: 'The charge is debited. This launch can now be deployed.',
+        meaning: 'Your wallet has been debited. You can send this to a chain whenever you like.',
       }
     case 'provisioning':
       return {
         tone: 'busy',
         glyph: '◐',
         word: 'PROVISIONING',
-        meaning: 'A deployer address is being prepared. Nothing has reached a chain yet.',
+        meaning: 'An address is being set aside to sign your deploy. Nothing has reached a chain yet.',
       }
     case 'awaiting_funds':
       return {
         tone: 'warn',
         glyph: '◷',
         word: 'AWAITING FUNDS',
-        meaning: 'The deployer address needs gas before the contract can be broadcast.',
+        meaning: 'The signing address is waiting on gas. It resumes on its own once that arrives.',
       }
     case 'deploying':
       return {
         tone: 'busy',
         glyph: '◐',
         word: 'DEPLOYING',
-        meaning: 'A job holds this launch. The attempts below are the evidence.',
+        meaning: 'A worker has hold of this launch. Watch the steps below for what it has done.',
       }
     case 'deployed':
       return {
         tone: 'good',
         glyph: '●',
         word: 'DEPLOYED',
-        meaning: 'The contract is on chain at the address below.',
+        meaning: 'Your contract exists, at the address below, and it is yours.',
       }
     case 'failed':
       // `mint/src/tokens.ts` makes this TERMINAL, and `CLAIMABLE` (`tokens.ts`) leaves it
@@ -135,7 +135,7 @@ export function statusTone(status: TokenStatus): Tone {
         tone: 'crit',
         glyph: '■',
         word: 'FAILED',
-        meaning: 'This deploy failed and will not be retried automatically.',
+        meaning: 'This launch stopped here, and no background job will pick it up again.',
       }
   }
 }
@@ -144,23 +144,23 @@ export function statusTone(status: TokenStatus): Tone {
 export function outcomeTone(outcome: AttemptOutcome): Tone {
   switch (outcome) {
     case 'signed':
-      return { tone: 'mute', glyph: '✎', word: 'SIGNED', meaning: 'Custody signed the transaction.' }
+      return { tone: 'mute', glyph: '✎', word: 'SIGNED', meaning: 'The custody service put a signature on it.' }
     case 'broadcast':
-      return { tone: 'busy', glyph: '➤', word: 'BROADCAST', meaning: 'Sent to the network.' }
+      return { tone: 'busy', glyph: '➤', word: 'BROADCAST', meaning: 'Handed to a node and waiting for a block.' }
     case 'confirmed':
-      return { tone: 'good', glyph: '●', word: 'CONFIRMED', meaning: 'Included and confirmed.' }
+      return { tone: 'good', glyph: '●', word: 'CONFIRMED', meaning: 'Mined into a block and confirmed there.' }
     case 'reverted':
-      return { tone: 'crit', glyph: '■', word: 'REVERTED', meaning: 'The chain rejected it.' }
+      return { tone: 'crit', glyph: '■', word: 'REVERTED', meaning: 'It ran on chain and the chain threw it out.' }
     case 'refused':
-      return { tone: 'crit', glyph: '⊘', word: 'REFUSED', meaning: 'A service refused to proceed.' }
+      return { tone: 'crit', glyph: '⊘', word: 'REFUSED', meaning: 'Something upstream declined to go any further.' }
     case 'unavailable':
-      return { tone: 'warn', glyph: '▲', word: 'UNAVAILABLE', meaning: 'A dependency could not be reached.' }
+      return { tone: 'warn', glyph: '▲', word: 'UNAVAILABLE', meaning: 'A service this step relies on did not answer.' }
     case 'not_implemented':
       return {
         tone: 'mute',
         glyph: '⊙',
         word: 'NOT IMPLEMENTED',
-        meaning: 'This chain family has no deployer yet.',
+        meaning: 'Nothing in this build can deploy to that chain family.',
       }
   }
 }
@@ -184,20 +184,20 @@ export function riskLines(risk: RiskIndicators): readonly RiskLine[] {
   return [
     line('Mint authority', risk.hasMintAuthority, {
       // A live mint authority is the bad direction here: more can be minted.
-      whenTrue: { state: 'bad', text: 'Someone can mint more of this token' },
-      whenFalse: { state: 'good', text: 'No mint authority: the supply is fixed on chain' },
+      whenTrue: { state: 'bad', text: 'A key exists that can mint more of this token' },
+      whenFalse: { state: 'good', text: 'Nothing on chain can mint more of this token' },
     }),
     line('Ownership', risk.ownershipRenounced, {
-      whenTrue: { state: 'good', text: 'Renounced: the owner key is the zero address' },
-      whenFalse: { state: 'bad', text: 'An owner key still controls this contract' },
+      whenTrue: { state: 'good', text: 'Given up — the owner is the zero address, which nobody holds' },
+      whenFalse: { state: 'bad', text: 'An owner role is still held over this contract' },
     }),
     line('Transfers', risk.paused, {
-      whenTrue: { state: 'bad', text: 'Paused: transfers are currently frozen' },
-      whenFalse: { state: 'good', text: 'Not paused' },
+      whenTrue: { state: 'bad', text: 'Frozen — no holder can move this token right now' },
+      whenFalse: { state: 'good', text: 'Moving freely between holders' },
     }),
     line('Supply vs the order', risk.supplyExceedsOrder, {
-      whenTrue: { state: 'bad', text: 'More has been minted than the order asked for' },
-      whenFalse: { state: 'good', text: 'On-chain supply matches the order' },
+      whenTrue: { state: 'bad', text: 'More is in circulation than the launch order asked for' },
+      whenFalse: { state: 'good', text: 'The chain and the launch order agree on the supply' },
     }),
   ]
 }
@@ -211,7 +211,7 @@ function line(
   },
 ): RiskLine {
   if (value === null) {
-    return { label, state: 'unknown', text: 'Not observed on chain' }
+    return { label, state: 'unknown', text: 'Not observed — nobody has looked, which is not a no' }
   }
   const chosen = value ? outcomes.whenTrue : outcomes.whenFalse
   return { label, state: chosen.state, text: chosen.text }

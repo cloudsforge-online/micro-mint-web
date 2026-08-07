@@ -58,14 +58,14 @@ export function TokenPage() {
     // One order is always one thing. `count` is what decides "empty", and an order that loaded is
     // never empty — a 404 arrives as a failure, which is where it belongs.
     () => 1,
-    'This launch could not be loaded.',
+    'This launch could not be fetched.',
     [id],
   )
 
   const reload = order.reload
 
-  const pay = useMutation(() => payForOrder(id), 'The payment did not go through.')
-  const deploy = useMutation(() => deployOrder(id), 'The deploy was not accepted.')
+  const pay = useMutation(() => payForOrder(id), 'The wallet was not debited.')
+  const deploy = useMutation(() => deployOrder(id), 'The deploy was turned down.')
 
   const onPay = useCallback(async () => {
     if (await pay.run()) reload()
@@ -77,7 +77,7 @@ export function TokenPage() {
     if (await deploy.run()) reload()
   }, [deploy, reload])
 
-  if (order.state === 'loading') return <Loading label="Reading this launch" />
+  if (order.state === 'loading') return <Loading label="Fetching this launch" />
   if (order.error) {
     return (
       <Failed
@@ -88,13 +88,13 @@ export function TokenPage() {
           // way on purpose (mint/src/server.ts) so that ids cannot be enumerated. The copy
           // must not claim to know which one it was.
           order.error.message.toLowerCase().includes('no such token')
-            ? 'No launch at this address'
-            : 'This launch did not load'
+            ? 'Nothing of yours is filed under that address'
+            : 'This launch is not on screen'
         }
       />
     )
   }
-  if (!order.data) return <Loading label="Reading this launch" />
+  if (!order.data) return <Loading label="Fetching this launch" />
 
   const token = order.data.token
   const tone = statusTone(token.status)
@@ -105,7 +105,7 @@ export function TokenPage() {
     <>
       <header className="mw-head">
         <p className="mw-head__eyebrow">
-          <Link to="/tokens">Your launches</Link>
+          <Link to="/tokens">All your launches</Link>
         </p>
         <h1 className="mw-head__title">
           {token.name} <span className="cf-num mw-head__symbol">{token.symbol}</span>
@@ -127,7 +127,7 @@ export function TokenPage() {
 
       <section className="mw-panel" aria-labelledby="order">
         <h2 className="mw-panel__title" id="order">
-          The order
+          What you asked for
         </h2>
         <dl className="mw-facts">
           <Fact label="Chain">
@@ -137,7 +137,7 @@ export function TokenPage() {
             <span className="cf-num">{token.standard}</span>
           </Fact>
           <Fact label="Features">
-            {token.features.length === 0 ? 'none — fixed supply' : token.features.join(', ')}
+            {token.features.length === 0 ? 'none — the supply is fixed at construction' : token.features.join(', ')}
           </Fact>
           <Fact label="Initial supply">
             <span className="cf-num">{displaySupply(token.supply, token.decimals)}</span>{' '}
@@ -148,7 +148,7 @@ export function TokenPage() {
           </Fact>
           <Fact label="Maximum supply">
             {token.cap === null ? (
-              <span className="mw-absent">no cap — this contract has none</span>
+              <span className="mw-absent">this contract implements no ceiling</span>
             ) : (
               <>
                 <span className="cf-num">{displaySupply(token.cap, token.decimals)}</span>{' '}
@@ -171,14 +171,14 @@ export function TokenPage() {
           */}
           <Fact label="Price">
             {usd(token.priceUsdCents) === null ? (
-              <span className="mw-absent">no price on this order</span>
+              <span className="mw-absent">this order carries no figure</span>
             ) : (
               <span className="cf-num">{usd(token.priceUsdCents)}</span>
             )}
           </Fact>
           <Fact label="Charged">
             {charge(token) === null ? (
-              <span className="mw-absent">nothing has been charged yet</span>
+              <span className="mw-absent">your wallet has not been touched</span>
             ) : (
               <span className="cf-num">{charge(token)}</span>
             )}
@@ -189,24 +189,26 @@ export function TokenPage() {
 
       <section className="mw-panel" aria-labelledby="pay">
         <h2 className="mw-panel__title" id="pay">
-          Payment
+          Paying for it
         </h2>
         {token.paidJournalEntryId ? (
           <p className="mw-panel__note">
-            Paid. The ledger entry is{' '}
+            Settled. Your receipt in the ledger is{' '}
             <code className="cf-num" title={token.paidJournalEntryId}>
               {shortHash(token.paidJournalEntryId)}
             </code>
-            . The debit and the state change happened in one transaction
+            . Your balance moved and this order advanced inside a single database transaction, so
+            one cannot have happened without the other
             (mint/src/server.ts).
           </p>
         ) : (
           <p className="mw-panel__note">
-            Nothing has been charged for this launch yet.
+            No money has moved for this launch. Deploying is what costs, and it has not been paid
+            for.
           </p>
         )}
 
-        {pay.error && <Failed notice={pay.error} title="The payment did not go through" />}
+        {pay.error && <Failed notice={pay.error} title="Your wallet was not debited" />}
         {pay.result && (
           // 200 versus 201 is a real difference and the service exposes it deliberately
           // (mint/src/server.ts). "Already paid" and "just paid" are different facts about
@@ -224,10 +226,10 @@ export function TokenPage() {
               rather than a plausible figure, if the service sent no charge back.
             */}
             {pay.result.replayed
-              ? 'This launch was already paid for. Nothing was charged a second time.'
+              ? 'You had already settled this launch, so no second debit was taken and your balance is unchanged.'
               : charge(pay.result.token) === null
-                ? 'Paid. The charge has been debited.'
-                : `Paid. ${charge(pay.result.token)} has been debited.`}
+                ? 'Settled. Your wallet has been debited.'
+                : `Settled. ${charge(pay.result.token)} has left your wallet.`}
           </p>
         )}
 
@@ -241,7 +243,7 @@ export function TokenPage() {
                 bare "Pay" — `usd()` returns null rather than "$0.00" so that this button can never
                 offer to charge nothing, which test/format.test.ts asserts as a property.
               */}
-              {pay.busy ? 'Paying…' : usd(token.priceUsdCents) === null ? 'Pay' : `Pay ${usd(token.priceUsdCents)}`}
+              {pay.busy ? 'Paying…' : usd(token.priceUsdCents) === null ? 'Pay for this launch' : `Pay ${usd(token.priceUsdCents)}`}
             </button>
             <span className="mw-actions__note">
               {/*
@@ -254,9 +256,9 @@ export function TokenPage() {
                 a page that promises a friendly replay and then shows a red refusal has taught its
                 reader that the site is unreliable at the exact moment their money moved.
               */}
-              This debits your wallet, once. If the answer is lost on the way back, reload this page
-              rather than pressing again: the charge and the state change happen in one transaction,
-              so this page is where you find out whether it went through.
+              One debit, taken once. Should the reply go astray on the way back to you, reload this
+              screen instead of pressing again — the money and the order state move together, so
+              whatever this page shows after a refresh is what actually happened to your balance.
             </span>
           </div>
         )}
@@ -264,20 +266,20 @@ export function TokenPage() {
 
       <section className="mw-panel" aria-labelledby="deploy">
         <h2 className="mw-panel__title" id="deploy">
-          Deployment
+          Getting it on chain
         </h2>
 
         <dl className="mw-facts">
           <Fact label="Contract address">
-            <Maybe value={token.contractAddress} missing="not deployed yet" />
+            <Maybe value={token.contractAddress} missing="no contract yet" />
           </Fact>
           <Fact label="Transaction">
             <span title={token.deployTxHash ?? undefined}>
-              <Maybe value={shortHashOrNull(token.deployTxHash)} missing="nothing broadcast yet" />
+              <Maybe value={shortHashOrNull(token.deployTxHash)} missing="nothing has been sent to a node" />
             </span>
           </Fact>
           <Fact label="Deployer">
-            <Maybe value={shortHashOrNull(token.deployerAddress)} missing="not provisioned yet" />
+            <Maybe value={shortHashOrNull(token.deployerAddress)} missing="no address issued yet" />
           </Fact>
           <Fact label="Broadcast">
             <Maybe value={nullableTimestamp(token.broadcastAt)} missing="—" />
@@ -290,15 +292,16 @@ export function TokenPage() {
           </Fact>
         </dl>
 
-        {deploy.error && <Failed notice={deploy.error} title="The deploy was not accepted" />}
+        {deploy.error && <Failed notice={deploy.error} title="The deploy was turned down" />}
         {deploy.result && (
           <p className="mw-note" role="status">
             <span className="mw-note__icon" aria-hidden="true">
               ➤
             </span>
             {/* ACCEPTED. Not deployed. See the header of this file. */}
-            Accepted, and queued. Nothing has reached a chain yet — this page is the status address
-            the service returned, and it updates as the job records each step below.
+            Taken, and put in the queue. Nothing has reached a chain yet. This screen is the address
+            the service handed back for watching, and each step the worker completes appears in the
+            table below.
           </p>
         )}
 
@@ -310,35 +313,37 @@ export function TokenPage() {
               onClick={onDeploy}
               disabled={deploy.busy}
             >
-              {deploy.busy ? 'Sending…' : 'Deploy'}
+              {deploy.busy ? 'Handing it over…' : 'Deploy'}
             </button>
             <span className="mw-actions__note">
-              The deploy is accepted immediately and runs as a job. Pressing this twice produces one
-              run, not two.
+              The work is done by a background worker, not by your browser, so you can leave. The
+              contract bytes are written down before anything is broadcast, which is why pressing
+              this twice still produces a single contract.
             </span>
           </div>
         ) : (
           <p className="mw-panel__note">{whyNotDeployable(token)}</p>
         )}
 
-        <h3 className="mw-panel__subtitle">Attempts</h3>
+        <h3 className="mw-panel__subtitle">Every step, in order</h3>
         {order.data.attempts.length === 0 ? (
           <p className="mw-panel__note">
-            No attempt has been recorded. Every signature, broadcast and confirmation appears here
-            in the order it happened, so “did this ever reach a chain” is answered by the row rather
-            than by a log search (mint/src/server.ts).
+            Nothing recorded so far. As the worker signs, broadcasts and then sees a confirmation,
+            each of those becomes a row here with its own timestamp. It means “did this ever touch a
+            chain?” is a question you can answer by looking, without asking anyone to read a log
+            (mint/src/server.ts).
           </p>
         ) : (
           <div className="mw-tablewrap">
             <table className="mw-table">
               <caption className="mw-table__caption">
-                Oldest first, as the service returns them (mint/src/tokens.ts).
+                Earliest at the top, in the order the service recorded them (mint/src/tokens.ts).
               </caption>
               <thead>
                 <tr>
                   <th scope="col">#</th>
-                  <th scope="col">Outcome</th>
-                  <th scope="col">Family</th>
+                  <th scope="col">What happened</th>
+                  <th scope="col">Chain family</th>
                   <th scope="col">Transaction</th>
                   <th scope="col">When</th>
                 </tr>
@@ -369,7 +374,8 @@ export function TokenPage() {
           <button type="button" className="cf-btn cf-btn--ghost" onClick={order.reload}>
             Refresh
           </button>{' '}
-          This page reaches no chain, so refreshing it cannot slow a deploy down
+          Refreshing only re-reads this order from the database. It sends nothing to a node, so
+          checking on progress cannot slow your deploy down
           (mint/src/server.ts).
         </p>
       </section>
@@ -406,7 +412,7 @@ function ProjectPageEditor({ tokenId, deployed }: { tokenId: string; deployed: b
         team: [],
         roadmap: [],
       }),
-    'The project page was not saved.',
+    'Your words were not saved.',
   )
 
   return (
@@ -415,15 +421,17 @@ function ProjectPageEditor({ tokenId, deployed }: { tokenId: string; deployed: b
         Project page
       </h2>
       <p className="mw-panel__note">
-        Public, at <code className="cf-num">/projects/{tokenId}</code>. What you write here is the
-        editorial half. The supply, the authorities and the contract address on that page are read
-        from the chain by the indexer and never from this order — an intent presented as an
-        observation is worse than an absence, because a reader cannot tell which they have
+        Anyone can read this, at <code className="cf-num">/projects/{tokenId}</code>, without an
+        account. You write the words. The supply, the ceiling, the owner and the contract address on
+        that page are measured from the chain by the CloudsForge indexer, never taken from your
+        order — a plan shown as though it were a measurement is worse than no figure at all, because
+        a buyer has no way to tell the two apart
         (mint/src/projectpages.ts).
       </p>
       {!deployed && (
         <p className="mw-panel__note">
-          Until this launch is deployed the page renders without its on-chain half and says so.
+          There is no contract to measure yet, so the public page carries your words and says plainly
+          that the chain half is missing.
         </p>
       )}
 
@@ -446,28 +454,30 @@ function ProjectPageEditor({ tokenId, deployed }: { tokenId: string; deployed: b
           onChange={(e) => setRisk(e.target.value)}
         />
         <span className="mw-field__hint">
-          Your own words. The computed indicators — mint authority, ownership, pause state — are
-          derived from the chain and are not editable here.
+          Whatever a prospective holder deserves to hear from you. Separately, the public page works
+          out for itself whether anything can still issue tokens, who holds the owner role and
+          whether transfers are frozen. Those come from the contract and cannot be written here.
         </span>
       </label>
 
-      {save.error && <Failed notice={save.error} title="The project page was not saved" />}
+      {save.error && <Failed notice={save.error} title="Your words were not saved" />}
       {save.result && (
         <p className="mw-note" role="status">
           <span className="mw-note__icon" aria-hidden="true">
             ✓
           </span>
           Saved.{' '}
-          <Link to={`/projects/${tokenId}`}>View the public page</Link>
+          <Link to={`/projects/${tokenId}`}>Read it as a visitor would</Link>
         </p>
       )}
 
       <div className="mw-actions">
         <button type="button" className="cf-btn" onClick={() => void save.run()} disabled={save.busy}>
-          {save.busy ? 'Saving…' : 'Save the project page'}
+          {save.busy ? 'Saving…' : 'Publish this'}
         </button>
         <span className="mw-actions__note">
-          This replaces the whole document. Anything not in this form is stored as empty.
+          Saving replaces the whole document rather than merging into it, so any field this form does
+          not offer is stored empty.
         </span>
       </div>
     </section>
@@ -481,14 +491,14 @@ function ProjectPageEditor({ tokenId, deployed }: { tokenId: string; deployed: b
  * A disabled control with no explanation is how a customer concludes the site is broken.
  */
 function whyNotDeployable(token: TokenOrder): string {
-  if (token.status === 'deployed') return 'This token is already deployed.'
+  if (token.status === 'deployed') return 'Your contract is already on chain. There is nothing left to send.'
   if (token.status === 'failed') {
-    return 'This deploy failed and will not be retried automatically. A retry is an explicit action that creates a new launch, not something a background job does by itself.'
+    return 'This one stopped where it is and no background job will pick it up again. Trying again means opening a fresh launch, which is a decision we leave to you rather than repeating a failure on a timer.'
   }
   if (token.status === 'awaiting_payment' || token.status === 'draft') {
-    return 'This order has not been paid for.'
+    return 'Settle the charge above and the deploy button appears here.'
   }
-  return `An order in ${token.status} cannot be deployed.`
+  return `An order sitting at ${token.status} is not ready to be sent.`
 }
 
 function shortHashOrNull(value: string | null): string | null {
