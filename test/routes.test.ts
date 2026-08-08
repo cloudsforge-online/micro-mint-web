@@ -22,6 +22,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import { DEEP_LINK_PATH, NAV, NON_INDEX_PATHS, ROUTES } from '../src/lib/routes.ts'
+import { readServiceSource } from './service-source.ts'
 
 const read = (file: string): string => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
 
@@ -145,12 +146,17 @@ describe('which routes are public matches which routes mint leaves unauthenticat
   it('the client sends no bearer to either unauthenticated route', () => {
     // The other half of the same rule, at the call site. `auth: false` is what stops this bundle
     // attaching a token to a handler that never asked for one.
-    const mint = read('src/lib/mint.ts')
+    //
+    // The FUNCTION, brace to brace — not `slice(at, at + 400)`. Four hundred characters from a
+    // match is a window rather than a construct: it runs past the closing brace of a short export
+    // and into the next one, so `getCatalogue` losing `auth: false` could have been covered by
+    // whichever function happened to follow it. Same defect as micro-org#235, one repository closer
+    // to home, and `functionBody` throws naming the file if the export is gone rather than handing
+    // back an empty string for `assert.match` to fail on for the wrong reason.
+    const mint = readServiceSource('src/lib/mint.ts', read('src/lib/mint.ts'))
     for (const fn of ['getCatalogue', 'getProjectPage']) {
-      const at = mint.indexOf(`export function ${fn}`)
-      assert.ok(at > 0, `${fn} is missing`)
       assert.match(
-        mint.slice(at, at + 400),
+        mint.functionBody(fn),
         /auth: false/,
         `${fn} calls an unauthenticated route and must not send a token`,
       )
