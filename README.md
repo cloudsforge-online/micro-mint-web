@@ -32,14 +32,25 @@ than citing a line, because a line names a position in a file this repository do
 
 | Method | Path | Authenticates | Idempotency-Key | What it does | Verified at |
 | --- | --- | --- | --- | --- | --- |
-| `GET` | `/v1/catalogue` | **no** | — | the three contracts and the Shards price | `mint/src/server.ts` |
+| `GET` | `/v1/catalogue` | **no** | — | the three contracts and `priceUsdCents` | `mint/src/server.ts` |
 | `POST` | `/v1/tokens` | yes | — | opens an order; charges nothing, deploys nothing | `mint/src/server.ts` |
 | `GET` | `/v1/tokens` | yes | — | the caller's launches, newest first, at most 100 | `mint/src/server.ts` |
 | `GET` | `/v1/tokens/:id` | yes | — | one order and every deploy attempt | `mint/src/server.ts` |
-| `POST` | `/v1/tokens/:id/pay` | yes | — | debits Shards; **201** fresh, **200** replayed | `mint/src/server.ts` |
+| `POST` | `/v1/tokens/:id/pay` | yes | — | debits EMBER; **201** fresh, **200** replayed | `mint/src/server.ts` |
 | `POST` | `/v1/tokens/:id/deploy` | yes | — | **202 and a status URL. Reaches no chain.** | `mint/src/server.ts` |
 | `PUT` | `/v1/tokens/:id/page` | yes | — | replaces the whole project-page document | `mint/src/server.ts` |
 | `GET` | `/v1/tokens/:id/page` | **no** | — | the public project page, chain facts included | `mint/src/server.ts` |
+
+**A deploy is quoted in US cents and settled in EMBER.** The catalogue serves `priceUsdCents`, a
+decimal string; `pay` debits EMBER at the rate `micro-pricing` gives. Those two rows said "the
+Shards price" and "debits Shards" until this edit, and they were describing a service that had
+already migrated (`mint/src/migrations.ts`, `retire_shard_pricing`): `priceShards` was **removed**
+from the wire rather than re-based, so a client still reading the old name gets `undefined` rather
+than cents silently relabelled as Shards. The one place SHARD still legitimately appears on these
+screens is a receipt — an order paid before the migration carries `chargeAssetCode: 'SHARD'` and
+`src/lib/format.ts` renders that verbatim, because printing EMBER over a debit the ledger records
+as SHARD is a false statement about money rather than a copy fix. `test/retired-currency.test.ts`
+is the guard on the distinction and is untouched here.
 
 **Two of them make no `authenticate()` call**, and this client sends no bearer to either
 (`auth: false` in `src/lib/mint.ts`). That is not a nicety: the estate has already shipped a client
