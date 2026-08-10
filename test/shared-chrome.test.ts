@@ -229,6 +229,56 @@ test('the consent banner does not appear where analytics cannot report', async (
 })
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
+   THE SECTIONS STRIP, IN A DOCUMENT.
+
+   The fifth thing this file exists for, and it is the same argument as the four above: the strip
+   used to be `.wt-subnav` in `src/styles.css`, and its defect was invisible from the source of
+   this repository because the source looked deliberate. Measured 2026-08-10 across the ten
+   frontends that each declared this row themselves, `.wt-subnav__inner` here was a `display: flex`
+   row with no `overflow-x` and its links had no `white-space: nowrap` — so on a phone the labels
+   squeezed, broke mid-word, and the ones past the edge could not be reached at all.
+
+   A grep for `<SubNav>` in `shell.tsx` would go green on an import nothing renders. What decides
+   whether a reader can reach the last section on a 360px screen is which CLASSES the elements in
+   the document are wearing, because those are the ones `ui.css` gives `overflow-x: auto` and
+   `white-space: nowrap` to. So it is asserted here, on the rendered tree.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+test('the sections strip on screen is the shared one, and so is every link in it', async () => {
+  await withScreen(h(App), { url: `${ORIGIN}/`, routes: { ...CATALOGUE } }, async (s) => {
+    await s.settle(20)
+
+    const strip = s.document.querySelector('nav.cf-subnav')
+    assert.ok(strip, 'the sections strip on screen is not the shared `.cf-subnav`')
+    assert.equal(strip.getAttribute('aria-label'), 'Sections', 'the landmark lost its name')
+    assert.ok(
+      strip.querySelector('.cf-subnav__inner'),
+      'the shared landmark has no shared scroll container inside it — this is the part that scrolls',
+    )
+
+    // EVERY link, not "at least one". A half-adopted strip is a row where some labels wrap and
+    // some do not, which is harder to notice than one where none of them do.
+    const links = [...strip.querySelectorAll('a')]
+    assert.ok(links.length >= 3, `expected this surface's sections, found ${links.length} links`)
+    const unshared = links.filter((a) => !a.classList.contains('cf-subnav__link'))
+    assert.deepEqual(
+      unshared.map((a) => a.textContent),
+      [],
+      'a section link is not wearing `cf-subnav__link`, so its label will break mid-word on a phone',
+    )
+
+    // The current section, in the SHARED modifier's spelling. The local one was `is-active`, and
+    // a link still carrying that gets no underline, no weight and no ink change from `ui.css`.
+    const current = links.filter((a) => a.classList.contains('cf-subnav__link--current'))
+    assert.equal(current.length, 1, `expected one current section, found ${current.length}`)
+    assert.equal(s.document.querySelector('[class*="wt-subnav"]'), null, 'a `wt-subnav` survived')
+    assert.equal(s.document.querySelector('.is-active'), null, 'the local active modifier survived')
+
+    s.clean('the sections strip')
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
    BROWSER MINING, FROM THE BAR
 
    The owner's report was that starting a browser miner is "hidden deep in mining page, it should
