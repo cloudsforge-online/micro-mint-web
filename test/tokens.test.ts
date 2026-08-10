@@ -157,6 +157,54 @@ describe('the stylesheet names only tokens that exist', () => {
   }
 })
 
+/**
+ * The sub-nav moved into the design system, and the local copy went with it.
+ *
+ * Both directions, following `explorer-web/test/tokens.test.ts`'s "the shared form controls exist
+ * and the local copies are gone": either half alone is true of a broken state. The shared rules
+ * arriving while a local copy still sits beside them is how ten copies of this strip came to
+ * exist under six prefixes; the local copy going while nothing shared has arrived is an unstyled
+ * row of links.
+ *
+ * What is asserted here is the TEXT of two stylesheets. The other half of the claim — that the
+ * strip a reader actually sees is the shared one — is in `test/shared-chrome.test.ts`, in a
+ * document, because a source-text check goes green on a component nothing renders.
+ */
+describe('the sub-nav is the design system’s, not a private copy', () => {
+  it('names none of the local sub-nav classes any more', () => {
+    for (const gone of [/\.wt-subnav\b/, /\bis-active\b/]) {
+      assert.doesNotMatch(CSS, gone, `src/styles.css still declares ${gone.source}`)
+    }
+  })
+
+  it('takes the measure from the token the bar and the footer use', () => {
+    // Measured 2026-08-10: `76rem` is 1216px, against `var(--cf-max-w)`'s 1200px in
+    // `.cf-bar__inner` and `.cf-foot__inner`. Two rules here set it, so the sub-nav AND the page
+    // content each sat 8px proud of the chrome on every wide screen.
+    assert.doesNotMatch(CSS, /max-width:\s*76rem/, 'the 1216px measure is back')
+    assert.match(CSS, /max-width:\s*var\(--cf-max-w\)/, 'the page measure is not the shared token')
+  })
+
+  if (TOKENS === undefined) {
+    it('SKIPPED: no micro-ui checkout — CI checks one out and requires this to run', () => {
+      assert.ok(true)
+    })
+  } else {
+    it('the shared classes exist in ui.css, so this strip is not unstyled', () => {
+      const ui = readFileSync(TOKENS.replace(/tokens\.css$/, 'ui.css'), 'utf8')
+      const declared = new Set([...ui.matchAll(/\.(cf-[a-z0-9_-]+)/g)].map((m) => m[1] ?? ''))
+      for (const present of [
+        'cf-subnav',
+        'cf-subnav__inner',
+        'cf-subnav__link',
+        'cf-subnav__link--current',
+      ]) {
+        assert.ok(declared.has(present), `.${present} is missing from ui.css`)
+      }
+    })
+  }
+})
+
 describe('no hard-coded colour, including one hiding in a fallback', () => {
   it('declares no hex literal', () => {
     const hexes = [...CSS.matchAll(/#[0-9a-fA-F]{3,8}\b/g)].map((m) => m[0])

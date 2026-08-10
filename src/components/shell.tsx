@@ -23,6 +23,7 @@ import {
   CookieBanner,
   MainRegion,
   SkipLink,
+  SubNav,
 } from '@cloudsforge/ui'
 import { applyHead, surfaceMeta, type PageMetaInput } from '@cloudsforge/ui/seo'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
@@ -58,23 +59,32 @@ export function AppShell({ unregistered = false }: { unregistered?: boolean }) {
         onSignOut={signOut}
       />
       {/*
-        The sub-nav is sticky at exactly `var(--cf-bar-h)` — the bar's own height token, not a
-        number copied out of it. When the bar's height changes, this moves with it.
+        `SubNav` from @cloudsforge/ui, rather than the `.wt-subnav` this file used to write itself.
+
+        The local strip was sticky at `var(--cf-bar-h)` and got that part right. What it did not
+        do — measured 2026-08-10, across the ten frontends that each declared this row themselves
+        — was survive a phone: `.wt-subnav__inner` was a `display: flex` row with no `overflow-x`
+        and its links had no `white-space: nowrap`, so the labels squeezed, broke mid-word, and
+        the ones past the edge could not be reached at all. Nine of the ten had that defect; the
+        shared rules are the tenth copy, `hub-web`'s, which did not.
+
+        The links stay this app's own — `NAV` is derived from `lib/routes.ts` and the active state
+        is react-router's, which is why the shared component takes children rather than addresses.
       */}
-      <nav className="wt-subnav" aria-label="Sections">
-        <div className="wt-subnav__inner">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) => `wt-subnav__link${isActive ? ' is-active' : ''}`}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
+      <SubNav label="Sections">
+        {NAV.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            className={({ isActive }) =>
+              `cf-subnav__link${isActive ? ' cf-subnav__link--current' : ''}`
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
+      </SubNav>
       <MainRegion className="wt-main">
         {/*
           Not fatal, so not a refusal — this app has a public page worth serving and nothing here

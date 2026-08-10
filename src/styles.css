@@ -1,10 +1,14 @@
 /**
  * This app's own layer, on top of @cloudsforge/ui.
  *
- * Two prefixes, deliberately. `wt-` is the shell inherited from the web template — the sub-nav,
- * the four states, the spinner — and is left alone so a fix upstream can be taken without a
- * merge. `mw-` is this app's own layer. Neither can collide with, or quietly override, a `cf-`
- * class from the design system.
+ * Two prefixes, deliberately. `wt-` is the shell inherited from the web template — the page
+ * measure, the four states, the spinner — and is left alone so a fix upstream can be taken
+ * without a merge. `mw-` is this app's own layer. Neither can collide with, or quietly override,
+ * a `cf-` class from the design system.
+ *
+ * The SUB-NAV used to be in that list and no longer is: it is `.cf-subnav` from the design system,
+ * because a fix upstream that has to be taken by hand into ten copies is a fix nine of them do not
+ * get. See the note where the rules stood.
  *
  * EVERY COLOUR, SPACE AND FONT IS A TOKEN. A literal hex here is a colour that will not follow
  * the substrate, and a page that does not follow the substrate is the one page in the estate that
@@ -37,62 +41,29 @@ body {
   color-scheme: dark;
 }
 
-/* ----------------------------- sub-nav ----------------------------- */
-
-/*
- * Docked at exactly the bar's height. `--cf-bar-h` is the token the bar itself is sized with, so
- * the two cannot drift; a copied `46px` would leave a gap or an overlap the day the bar changes,
- * on every surface at once and on none of the ones anybody rechecked.
- */
-.wt-subnav {
-  position: sticky;
-  top: var(--cf-bar-h);
-  z-index: 40;
-  background: var(--cf-bg-raised);
-  border-bottom: 1px solid var(--cf-line);
-}
-
-.wt-subnav__inner {
-  display: flex;
-  gap: 0.25rem;
-  align-items: stretch;
-  max-width: 76rem;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-.wt-subnav__link {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.7rem 0.85rem;
-  color: var(--cf-fg-dim);
-  text-decoration: none;
-  font-size: 0.875rem;
-  /* The active marker is a 2px underline in the accent, and the LABEL also changes weight and
-     colour: colour is never the only channel. */
-  border-bottom: 2px solid transparent;
-}
-
-.wt-subnav__link:hover {
-  color: var(--cf-fg);
-  background: var(--cf-surface-hover);
-}
-
-.wt-subnav__link.is-active {
-  color: var(--cf-fg);
-  font-weight: 600;
-  border-bottom-color: var(--cf-accent);
-}
-
-.wt-subnav__link:focus-visible {
-  outline: 2px solid var(--cf-accent);
-  outline-offset: -2px;
-}
+/* ----------------------------- sub-nav ----------------------------- *
+ * DELETED. The strip is `.cf-subnav` from the design system now, rendered by `SubNav` in
+ * `src/components/shell.tsx`.
+ *
+ * The rules that stood here were docked correctly — `top: var(--cf-bar-h)`, never a copied number
+ * — and were wrong in the two ways measured on 2026-08-10 across the ten frontends that each
+ * declared this row themselves: `.wt-subnav__inner` was a `display: flex` row with no
+ * `overflow-x`, and `.wt-subnav__link` had no `white-space: nowrap`, so a narrow viewport squeezed
+ * the labels and broke them mid-word with no way to reach the ones past the edge; and its measure
+ * was `76rem`, 1216px, against the 1200px the bar and footer use.
+ *
+ * They are not repaired in place because a private copy beside the shared one is what produced ten
+ * of them under six prefixes in the first place. Nothing app-specific was lost: the links are
+ * still this app's, still derived from `lib/routes.ts`.
+ * ------------------------------------------------------------------- */
 
 /* ------------------------------ page ------------------------------- */
 
 .wt-main {
-  max-width: 76rem;
+  /* The bar's and the footer's own measure, not a second number that agrees with it today.
+     Measured 2026-08-10: this was `76rem` — 1216px against `.cf-bar__inner`'s 1200px — so the
+     page content sat 8px proud of the chrome above and below it on every wide screen. */
+  max-width: var(--cf-max-w);
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
 }
@@ -107,7 +78,7 @@ body {
 
 .wt-page__title {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: var(--cf-text-xl);
   letter-spacing: -0.01em;
 }
 
@@ -121,7 +92,7 @@ body {
 
 .wt-panel__title {
   margin: 0 0 0.75rem;
-  font-size: 0.95rem;
+  font-size: var(--cf-text-md);
   color: var(--cf-fg-dim);
   font-weight: 600;
 }
@@ -139,12 +110,12 @@ body {
   border-radius: 8px;
   border: 1px dashed var(--cf-line-strong);
   color: var(--cf-fg-dim);
-  font-size: 0.85rem;
+  font-size: var(--cf-text-sm);
 }
 
 .wt-note {
   color: var(--cf-fg-dim);
-  font-size: 0.85rem;
+  font-size: var(--cf-text-sm);
   margin: 0.5rem 0 0;
 }
 
@@ -157,7 +128,7 @@ body {
   grid-template-columns: minmax(8rem, auto) 1fr;
   gap: 0.35rem 1rem;
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--cf-text-sm);
 }
 
 .wt-facts dt {
@@ -170,7 +141,7 @@ body {
 
 .wt-facts--mono dd {
   font-family: var(--cf-font-mono);
-  font-size: 0.82rem;
+  font-size: var(--cf-text-xs);
 }
 
 /* ------------------------- the four states ------------------------- */
@@ -191,7 +162,7 @@ body {
 }
 
 .wt-state__icon {
-  font-size: 1.5rem;
+  font-size: var(--cf-text-2xl);
   line-height: 1;
 }
 
@@ -204,7 +175,7 @@ body {
 .wt-state__meta {
   margin: 0;
   color: var(--cf-fg-dim);
-  font-size: 0.875rem;
+  font-size: var(--cf-text-sm);
   max-width: 34rem;
 }
 
