@@ -30,10 +30,17 @@
  */
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { AccountMenu, CloudsForgeBar, MAIN_ID, ProductSwitcher } from '@cloudsforge/ui'
+import {
+  AccountMenu,
+  CloudsForgeBar,
+  HUB_MINE_PATH,
+  MAIN_ID,
+  NOT_PAID_CLAUSE,
+  ProductSwitcher,
+} from '@cloudsforge/ui'
 import { createElement as h } from 'react'
 import { App } from '../src/app.tsx'
-import { PRODUCT } from '../src/lib/hosts.ts'
+import { PRODUCT, hosts } from '../src/lib/hosts.ts'
 import * as fx from './fixtures.ts'
 import { withScreen, type Screen } from './dom.ts'
 
@@ -218,5 +225,69 @@ test('the consent banner does not appear where analytics cannot report', async (
       null,
       'an analytics tag was injected without a click on Accept',
     )
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   BROWSER MINING, FROM THE BAR
+
+   The owner's report was that starting a browser miner is "hidden deep in mining page, it should
+   be easily found near the account on all pages". It is now in the shared chrome, so it is here
+   on every address this surface serves — and it is asserted by mounting the app, for the same
+   reason the four above are: a shell that passes the prop and a bar that drops it look identical
+   in source.
+
+   What this surface renders is the `elsewhere` state, which is a LINK. The miner is a WebSocket
+   and two Web Workers on `hub.<apex>`, a different origin, so nothing in this bundle can start,
+   observe or stop a session. Pressing the session itself is asserted in micro-hub-web by
+   BJ-MINE-01..07, which mount the miner.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+test('the bar offers browser mining, beside the account, on an ordinary address', async () => {
+  await withScreen(h(App), { url: `${ORIGIN}/`, routes: { ...CATALOGUE } }, async (s) => {
+    await s.settle(20)
+
+    const bar = s.document.querySelector('.cf-bar')
+    assert.ok(bar, 'this surface no longer renders the company bar')
+    const found = [...bar.querySelectorAll('.cf-mine')]
+    assert.equal(found.length, 1, `expected one mining control in the bar, found ${found.length}`)
+    const mine = found[0] as Element
+
+    // An anchor, not an onClick. A destination expressed as a handler cannot be middle-clicked,
+    // copied or crawled, and is invisible to every check that reads links — which is how the
+    // account entry spent four months pointing at the sign-in page (micro-hub-web
+    // `test/account-link.test.ts`).
+    assert.equal(mine.tagName, 'A', 'the mining control is not a link')
+    assert.equal(
+      mine.getAttribute('href'),
+      `${hosts().hub}${HUB_MINE_PATH}`,
+      'the mining control does not point at Forge Hub’s mining address',
+    )
+
+    // Beside the account, asserted as TAB ORDER rather than as a CSS neighbour: a stylesheet can
+    // move a box, but only document order moves this.
+    const order = s.tabbables()
+    const account = s.byRole('button', 'Sign in')
+    assert.equal(
+      order.indexOf(account) - order.indexOf(mine),
+      1,
+      'the mining control is no longer immediately before the account in the tab order',
+    )
+
+    // And it promises nothing the pool does not pay. `pool/src/payouts.ts` derives
+    // `payoutsImplemented` and it is false today, so any surface implying settlement is a defect.
+    const described = s.document.getElementById(mine.getAttribute('aria-describedby') ?? '')
+    assert.ok(described, 'the mining control carries no description for a screen reader')
+    assert.ok(
+      (described.textContent ?? '').includes(NOT_PAID_CLAUSE),
+      'the mining control does not carry the not-paid clause',
+    )
+    assert.doesNotMatch(
+      `${mine.textContent ?? ''} ${described.textContent ?? ''}`,
+      /[$€£]|\d/,
+      'the mining control shows a figure, and nothing is paid',
+    )
+
+    s.clean('the bar’s mining control')
   })
 })
