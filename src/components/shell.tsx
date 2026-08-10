@@ -23,10 +23,11 @@ import {
   CookieBanner,
   MainRegion,
   SkipLink,
+  miningOnHub,
 } from '@cloudsforge/ui'
 import { applyHead, surfaceMeta, type PageMetaInput } from '@cloudsforge/ui/seo'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { PRODUCT } from '../lib/hosts.ts'
+import { PRODUCT, hosts } from '../lib/hosts.ts'
 import { NAV, ROUTES } from '../lib/routes.ts'
 import { useSession } from '../lib/auth.tsx'
 
@@ -51,11 +52,27 @@ export function AppShell({ unregistered = false }: { unregistered?: boolean }) {
       */}
       <SkipLink />
       <DocumentMeta />
+      {/*
+        `mining` is the design system's own control, and it sits immediately before the account
+        menu on every address this surface serves.
+
+        The owner's report was that starting a browser miner is "hidden deep in mining page". The
+        answer is a control in the one piece of chrome every surface renders. What this surface
+        passes is `miningOnHub()`, the `elsewhere` state: the miner is a WebSocket and two Web
+        Workers on ONE origin, `hub.<apex>` is a different origin from this one, and nothing here
+        can start, observe or stop a session over there. So it renders an ANCHOR to the surface
+        that can — middle-clickable, openable in a new tab, and visible to every check that reads
+        links, which is the argument `accountSettingsUrl` makes about the account entry.
+
+        `hosts().hub` rather than a literal: this bundle is served from localhost, from a preview
+        host and from the apex, and a written-out URL would be right on exactly one of them.
+      */}
       <CloudsForgeBar
         current={PRODUCT}
         account={account}
         onSignIn={() => signIn()}
         onSignOut={signOut}
+        mining={miningOnHub(hosts().hub)}
       />
       {/*
         The sub-nav is sticky at exactly `var(--cf-bar-h)` — the bar's own height token, not a
