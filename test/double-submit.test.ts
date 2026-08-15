@@ -391,7 +391,7 @@ describe('two clicks in one tick — Deploy', () => {
    Create — the one with no server-side guard at all
    ══════════════════════════════════════════════════════════════════════════════════════════ */
 
-describe('two submits in one tick — Create this launch', () => {
+describe('two submits in one tick — the commit button on the order form', () => {
   for (const mounting of BOTH_MOUNTINGS) {
     it(`opens exactly one order, ${mounting.label}`, async () => {
       await withScreen(
@@ -409,7 +409,12 @@ describe('two submits in one tick — Create this launch', () => {
         async (s) => {
           await s.settle(20)
           await fillLaunchForm(s)
-          const commit = s.byRole('button', /Create this launch/)
+          // Matched on the COMMIT VERB, not on the exact label. This assertion was
+          // `/Create this launch/` and went red the day the button was relabelled — a
+          // double-submit guard that a copy edit can break is a guard that gets deleted rather
+          // than fixed. `test/journeys.test.ts` pins the same family for the same reason. The
+          // anchor keeps it off the "I meant N whole tokens" button beside the supply field.
+          const commit = s.byRole('button', /^(open|create)/i)
           s.clickNoFlush(commit)
           s.clickNoFlush(commit)
           await s.settle(60)

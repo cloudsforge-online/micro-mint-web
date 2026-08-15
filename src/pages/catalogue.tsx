@@ -7,35 +7,50 @@
  * front page demands a session cannot answer the question people arrive with.
  *
  * The catalogue is a PROJECTION of the committed contracts rather than a price list somebody
- * maintains (`mint/src/catalogue.ts`), which is why the cap rule is rendered as part of each
- * tier rather than as small print: `cap` is `'required'` or `'forbidden'`
- * (`mint/src/catalogue.ts`) and there is no third option. A customer who does not learn that
- * here learns it after paying — see the note in src/lib/launch.ts.
+ * maintains (`mint/src/catalogue.ts`), which is why the cap rule is rendered as a row of the
+ * comparison rather than as small print: `cap` is `'required'` or `'forbidden'` and there is no
+ * third option. A customer who does not learn that here learns it after paying.
+ *
+ * ── WHY THE PAGE IS SHAPED LIKE THIS ──────────────────────────────────────────────────────────
+ *
+ * It used to open with four paragraphs of roughly sixty words each, then three more under three
+ * contract names, then two about chains — some seven hundred words of prose before a reader
+ * reached a control. Every sentence was true, and together they said one thing: THE BYTECODE WAS
+ * COMPILED BEFORE YOU ARRIVED, SO AN ORDER IS FIVE CONSTRUCTOR ARGUMENTS.
+ *
+ * So that is what the page shows, using the arguments themselves (`src/components/plate.tsx`,
+ * read off `mint/src/contracts/ForgeTokens.sol`). The three contracts became a comparison,
+ * because the decision they support is a comparison and prose is the worst way to make one: the
+ * axes are the capabilities an owner keeps, derived from the FEATURES the response reported. What
+ * survives of the prose is four claims, each with the single line that makes it checkable.
  */
 import { Link } from 'react-router-dom'
 import { Failed, Loading } from '../components/states.tsx'
+import { Plate } from '../components/plate.tsx'
 import { useResource } from '../lib/resource.ts'
-import { getCatalogue, type Catalogue } from '../lib/mint.ts'
+import { getCatalogue, CHAINS, type Catalogue } from '../lib/mint.ts'
+import { CAPABILITIES, TIER_COPY } from '../lib/inscription.ts'
 import { chainName, usd } from '../lib/format.ts'
-import { CHAINS } from '../lib/mint.ts'
 
-const TIER_COPY: Record<string, { title: string; blurb: string }> = {
-  fixed: {
-    title: 'Fixed supply',
-    blurb:
-      'The whole supply is created at construction and sent to your address. The contract has no owner role at all, so there is no key to guard, none to hand over, and no path by which the number of tokens can move.',
+/** Four claims, each with the line that makes it checkable — instead of four paragraphs asking to be believed. */
+const PROOFS: readonly { readonly claim: string; readonly line: string }[] = [
+  {
+    claim: 'We cannot touch your token',
+    line: 'No administrator slot, no proxy, no upgrade route. There is nothing for us to hold.',
   },
-  mintable: {
-    title: 'Mintable and burnable',
-    blurb:
-      'Your address holds a key that can issue further tokens, and holders can destroy their own. Supply is deliberately open-ended, so a buyer should read the figure on the project page — it is measured on chain rather than copied from the order.',
+  {
+    claim: 'The bytecode predates your order',
+    line: 'Committed to the repository beside a checksum of its source. No compiler runs while you wait.',
   },
-  foundry: {
-    title: 'Mintable, burnable and pausable',
-    blurb:
-      'Everything above, plus a switch that stops transfers across the whole token while it is on. The ceiling is fixed in the constructor and the contract arithmetic refuses to pass it.',
+  {
+    claim: 'A plain ERC-20, on OpenZeppelin',
+    line: 'Every wallet and explorer that already speaks Ethereum reads it the moment it confirms.',
   },
-}
+  {
+    claim: 'Gas is ours',
+    line: 'A deployer address is provisioned for your order. You never fund it and never sign anything.',
+  },
+]
 
 export function CataloguePage() {
   const catalogue = useResource<Catalogue>(
@@ -44,165 +59,203 @@ export function CataloguePage() {
     'The list of contracts could not be fetched.',
   )
 
+  const data = catalogue.data
+
   return (
     <>
-      <header className="mw-head">
-        <h1 className="mw-head__title">Deploy an ERC-20 that answers to you alone</h1>
-        <p className="mw-head__lede">
-          Choose one of three Solidity contracts, name your token, and CloudsForge puts it on chain
-          for a single dollar price. The address you give in the order is written into the
-          constructor, so the supply and any administrative key belong to you from the first block
-          the contract exists in.
-        </p>
-      </header>
+      <header className="mw-hero">
+        <div className="mw-hero__say">
+          <p className="mw-eyebrow">Forge Create</p>
+          <h1 className="mw-hero__title">
+            The die is already cut.
+            <br />
+            You bring the inscription.
+          </h1>
+          <p className="mw-hero__lede">
+            Three ERC-20 contracts, compiled and committed before you arrived. Your order fills in
+            the constructor and nothing else.
+          </p>
 
-      <section className="mw-panel" aria-labelledby="what">
-        <h2 className="mw-panel__title" id="what">
-          What you walk away with
-        </h2>
-        <ul className="mw-tiers">
-          <li className="mw-tier">
-            <h3 className="mw-tier__title">Authority we cannot hold</h3>
-            <p className="mw-tier__blurb">
-              CloudsForge is unable to issue your tokens, freeze your holders or take the owner role
-              off you. That is not a promise about our conduct. The compiled contract has no
-              administrator slot, no proxy behind it and no upgrade route, so there is nothing for us
-              to hold in the first place — and you can read the source we compiled before you order.
+          <div className="mw-hero__actions">
+            <Link className="cf-btn cf-btn--ember" to="/launch">
+              Name your token
+            </Link>
+
+            {/* The quote, and the quote alone. What it costs in EMBER is a settlement-time
+                question the catalogue cannot answer: the rate is read per payment and recorded on
+                the order that used it (`mint/src/pricingclient.ts`), so a figure printed here
+                would be a rate this screen never consulted. The line beneath says what the charge
+                is DENOMINATED in, which is the durable part. */}
+            {data && (
+              <p className="mw-cost">
+                {usd(data.priceUsdCents) === null ? (
+                  <span className="mw-absent">the amount is not being reported</span>
+                ) : (
+                  <>
+                    <span className="cf-num mw-cost__value">{usd(data.priceUsdCents)}</span>
+                    <span className="mw-cost__unit">
+                      per deploy, settled in <code className="cf-num">{data.settlementAsset}</code>{' '}
+                      at the rate read when you pay
+                    </span>
+                  </>
+                )}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/*
+          The offer, rendered as the thing being offered. `fixed` is the plate a visitor meets
+          because it is the contract with nothing in it to explain — and the file name comes off
+          the response rather than being written here, so the plate names the file mint would
+          really deploy.
+        */}
+        {data && (
+          <div className="mw-hero__plate">
+            <Plate
+              variant="fixed"
+              contract={data.variants.find((v) => v.variant === 'fixed')?.contract ?? 'FixedSupplyToken'}
+              stamp="already compiled"
+            />
+            <p className="mw-hero__caption">
+              Five arguments. Everything else was decided, compiled and checked in before you opened
+              this page.
             </p>
-          </li>
-          <li className="mw-tier">
-            <h3 className="mw-tier__title">Bytecode written before you asked</h3>
-            <p className="mw-tier__blurb">
-              Each contract is compiled ahead of time and the resulting bytes are committed to the
-              repository beside a checksum of the source. Your order supplies constructor arguments
-              and nothing else. No compiler runs while you wait, and no template is stitched together
-              from your input.
-            </p>
-          </li>
-          <li className="mw-tier">
-            <h3 className="mw-tier__title">An ordinary token, immediately</h3>
-            <p className="mw-tier__blurb">
-              What lands on chain is a plain ERC-20 built on OpenZeppelin. Every wallet, block
-              explorer and client library that already speaks Ethereum reads it the moment it
-              confirms. Nothing has to be taught about it and nothing about it is proprietary.
-            </p>
-          </li>
-          <li className="mw-tier">
-            <h3 className="mw-tier__title">Gas handled for you</h3>
-            <p className="mw-tier__blurb">
-              The deploy is signed and broadcast by an address CloudsForge provisions for your order
-              alone. You never fund it, never hold native coin and never sign a transaction. The
-              price below is the whole cost of the launch.
-            </p>
-          </li>
-        </ul>
-      </section>
+          </div>
+        )}
+      </header>
 
       {catalogue.state === 'loading' && <Loading label="Fetching the contracts on offer" />}
       {(catalogue.state === 'failed' || catalogue.state === 'forbidden') && catalogue.error && (
-        <Failed notice={catalogue.error} onRetry={catalogue.reload} title="The contract list is not on screen" />
+        <Failed
+          notice={catalogue.error}
+          onRetry={catalogue.reload}
+          title="The contract list is not on screen"
+        />
       )}
 
-      {catalogue.data && (
+      {data && (
         <>
-          <section className="mw-panel" aria-labelledby="price">
-            <h2 className="mw-panel__title" id="price">
-              What it costs
+          <section className="mw-section" aria-labelledby="dies">
+            <h2 className="mw-section__title" id="dies">
+              The three dies
             </h2>
-            <p className="mw-price">
-              {/* The quote, and the quote alone. What it costs in EMBER is a settlement-time
-                  question the catalogue cannot answer: the rate is read per payment and recorded
-                  on the order that used it (mint/src/pricingclient.ts), so a figure printed
-                  here would be a rate this screen never consulted. The note below says what the
-                  charge will be DENOMINATED in, which is the part that is durable. */}
-              {usd(catalogue.data.priceUsdCents) === null ? (
-                <span className="mw-absent">the amount is not being reported</span>
-              ) : (
-                <>
-                  <span className="cf-num mw-price__value">{usd(catalogue.data.priceUsdCents)}</span>{' '}
-                  <span className="mw-price__unit">per deploy</span>
-                </>
-              )}
+            <p className="mw-section__note">
+              The features you tick have to match one of them exactly; nothing is rounded up to the
+              nearest fit. Being handed a transfer-freezing switch you never asked for is the kind
+              of surprise a holder discovers at the worst possible moment, so the order is refused
+              instead.
             </p>
-            <p className="mw-panel__note">
-              One charge, taken when you press pay, and no charge for anything else. The figure is
-              held in dollars and converted to{' '}
-              <code className="cf-num">{catalogue.data.settlementAsset}</code> using the exchange
-              rate read inside that request, which is then written onto your order so the receipt and
-              the debit can never disagree. Filling in the form and opening an order costs
-              nothing.
-              {/* The service's default network, which the order form pre-selects. Rendered because
-                  a catalogue that does not say which network it priced is describing two
-                  different products at one price. */}{' '}
-              Orders default to the <code className="cf-num">{catalogue.data.network}</code> network
-              here.
-            </p>
+
+            <div className="mw-scroll">
+              <table className="mw-dies">
+                <caption className="mw-dies__caption">
+                  Read across a row to compare, down a column to choose. Every answer comes from the
+                  features the service reported for that contract.
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">
+                      <span className="cf-sr">What the contract allows</span>
+                    </th>
+                    {data.variants.map((v) => (
+                      <th scope="col" key={v.variant}>
+                        <span className="mw-dies__name">{TIER_COPY[v.variant]?.title ?? v.variant}</span>
+                        <span className="cf-num mw-dies__contract">{v.contract}</span>
+                        {/* The variant key itself, because it is the word the service, the order
+                            row and any support conversation all use. */}
+                        <span className="cf-num mw-dies__key">{v.variant}</span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {CAPABILITIES.map((capability) => (
+                    <tr key={capability.axis}>
+                      <th scope="row" className="mw-dies__axis">
+                        {capability.axis}
+                      </th>
+                      {data.variants.map((v) => {
+                        const answer = capability.answer(v.features, v.cap)
+                        return (
+                          <td key={v.variant}>
+                            {/* Glyph AND word, never the tint alone — see the head of
+                                src/styles.css. */}
+                            <span className="mw-dies__cell">
+                              <span
+                                className={`mw-dies__glyph${answer.yes ? ' mw-dies__glyph--yes' : ''}`}
+                                aria-hidden="true"
+                              >
+                                {answer.yes ? '●' : '○'}
+                              </span>
+                              <span>{answer.word}</span>
+                            </span>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                  <tr>
+                    <th scope="row" className="mw-dies__axis">
+                      In a sentence
+                    </th>
+                    {data.variants.map((v) => (
+                      <td key={v.variant} className="mw-dies__line">
+                        {TIER_COPY[v.variant]?.line ?? ''}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </section>
 
-          <section className="mw-panel" aria-labelledby="tiers">
-            <h2 className="mw-panel__title" id="tiers">
-              The three contracts
+          <section className="mw-section" aria-labelledby="keep">
+            <h2 className="mw-section__title" id="keep">
+              What you keep
             </h2>
-            <p className="mw-panel__note">
-              Ticking a feature selects a contract; the set you tick has to match one of these three
-              exactly. Nothing is rounded up to the closest available option. Being handed a
-              transfer-freezing switch you did not ask for is the kind of surprise a token holder
-              discovers at the worst possible moment, so the service refuses the order instead.
-            </p>
-            <ul className="mw-tiers">
-              {catalogue.data.variants.map((v) => {
-                const copy = TIER_COPY[v.variant]
-                return (
-                  <li className="mw-tier" key={v.variant}>
-                    <h3 className="mw-tier__title">{copy?.title ?? v.variant}</h3>
-                    <p className="mw-tier__contract">
-                      <code className="cf-num">{v.contract}</code>
-                    </p>
-                    <p className="mw-tier__blurb">{copy?.blurb ?? ''}</p>
-                    <dl className="mw-tier__facts">
-                      <div>
-                        <dt>Features</dt>
-                        <dd>{v.features.length === 0 ? 'none' : v.features.join(', ')}</dd>
-                      </div>
-                      <div>
-                        <dt>Maximum supply</dt>
-                        {/* 'required' or 'forbidden' — never "optional". Saying so here is what
-                            stops a customer discovering it at deploy time. */}
-                        <dd>
-                          {v.cap === 'required'
-                            ? 'you set the cap, and the contract arithmetic will not cross it'
-                            : 'no cap — this contract implements none, so the field is refused'}
-                        </dd>
-                      </div>
-                    </dl>
-                  </li>
-                )
-              })}
+            <ul className="mw-proofs">
+              {PROOFS.map((proof) => (
+                <li className="mw-proof" key={proof.claim}>
+                  <h3 className="mw-proof__claim">{proof.claim}</h3>
+                  <p className="mw-proof__line">{proof.line}</p>
+                </li>
+              ))}
             </ul>
           </section>
 
-          <section className="mw-panel" aria-labelledby="chains">
-            <h2 className="mw-panel__title" id="chains">
+          <section className="mw-section" aria-labelledby="where">
+            <h2 className="mw-section__title" id="where">
               Where it goes
             </h2>
-            <p className="mw-panel__note">
-              An order can name {CHAINS.map(chainName).join(', ')}. Ember is the Forge Network&rsquo;s
-              own chain: its execution engine was written from the ground up and is held to the
-              vectors the Ethereum project publishes for state transitions, the virtual machine,
-              transaction encoding, the trie and RLP — all of them passing at Shanghai. So
-              &ldquo;this behaves like Ethereum&rdquo; is something you can go and check rather than
-              something we ask you to believe.
-            </p>
-            <p className="mw-panel__note">
-              Pressing deploy does not hold your browser open while a chain is written to. The
-              request comes straight back with an address to watch, and the signing, broadcast and
-              confirmation are recorded on that page one line at a time as they happen. Close the tab
-              and come back to it; the work is not tied to your connection.
-            </p>
+            <dl className="mw-pairs">
+              <div className="mw-pair">
+                <dt>Chains</dt>
+                <dd>
+                  {CHAINS.map(chainName).join(', ')}. Ember is the Forge Network&rsquo;s own chain,
+                  held to the vectors the Ethereum project publishes — state transitions, the
+                  virtual machine, transaction encoding, the trie and RLP, all passing at Shanghai.
+                </dd>
+              </div>
+              <div className="mw-pair">
+                <dt>Default network</dt>
+                <dd>
+                  Orders open on <code className="cf-num">{data.network}</code> here. You choose on
+                  the form.
+                </dd>
+              </div>
+              <div className="mw-pair">
+                <dt>After you press deploy</dt>
+                <dd>
+                  The request comes straight back with an address to watch. Signing, broadcast and
+                  confirmation are recorded there one line at a time, so you can close the tab.
+                </dd>
+              </div>
+            </dl>
           </section>
 
           <p className="mw-cta">
-            <Link className="cf-btn cf-btn--primary" to="/launch">
+            <Link className="cf-btn cf-btn--ember" to="/launch">
               Name your token
             </Link>
           </p>
