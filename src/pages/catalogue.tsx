@@ -32,24 +32,21 @@ import { getCatalogue, CHAINS, type Catalogue } from '../lib/mint.ts'
 import { CAPABILITIES, TIER_COPY } from '../lib/inscription.ts'
 import { chainName, usd } from '../lib/format.ts'
 
-/** Four claims, each with the line that makes it checkable — instead of four paragraphs asking to be believed. */
+/**
+ * Four claims, each with the ONE fact that makes it checkable.
+ *
+ * These were four sentences apiece and they are now a clause apiece, for the reason this whole page
+ * was rewritten: a claim is believed because of the fact under it, not because of how many words
+ * surround the fact. "No admin slot, no proxy, no upgrade route" is checkable in an explorer in
+ * fifteen seconds; the sentence that used to follow it — "There is nothing for us to hold" — was
+ * the same claim again in a softer voice, which is the shape of copy that makes a page feel like it
+ * is selling rather than stating.
+ */
 const PROOFS: readonly { readonly claim: string; readonly line: string }[] = [
-  {
-    claim: 'We cannot touch your token',
-    line: 'No administrator slot, no proxy, no upgrade route. There is nothing for us to hold.',
-  },
-  {
-    claim: 'The bytecode predates your order',
-    line: 'Committed to the repository beside a checksum of its source. No compiler runs while you wait.',
-  },
-  {
-    claim: 'A plain ERC-20, on OpenZeppelin',
-    line: 'Every wallet and explorer that already speaks Ethereum reads it the moment it confirms.',
-  },
-  {
-    claim: 'Gas is ours',
-    line: 'A deployer address is provisioned for your order. You never fund it and never sign anything.',
-  },
+  { claim: 'We cannot touch it', line: 'No admin slot, no proxy, no upgrade route' },
+  { claim: 'Compiled before you asked', line: 'In the repository, beside a checksum of its source' },
+  { claim: 'A plain ERC-20', line: 'OpenZeppelin — every wallet already reads it' },
+  { claim: 'Gas is ours', line: 'You never fund an address and never sign' },
 ]
 
 export function CataloguePage() {
@@ -65,7 +62,14 @@ export function CataloguePage() {
     <>
       <header className="mw-hero">
         <div className="mw-hero__say">
-          <p className="mw-eyebrow">Forge Create</p>
+          {/* The mark from brand/assets/create: an anvil with a spark over it. It is the page's
+              own thesis in one drawing — the anvil is the die, already there, and the spark is the
+              single strike a person adds. Decorative, so it is out of the accessibility tree and
+              the words beside it carry the meaning. */}
+          <p className="mw-eyebrow">
+            <img className="mw-eyebrow__mark" src="/mark-256.png" alt="" aria-hidden="true" width="22" height="22" />
+            Forge Create
+          </p>
           <h1 className="mw-hero__title">
             The die is already cut.
             <br />
@@ -140,18 +144,23 @@ export function CataloguePage() {
             <h2 className="mw-section__title" id="dies">
               The three dies
             </h2>
+            {/* One clause, and it is the one a reader can act on: what you tick must MATCH a die,
+                because a near fit is refused rather than rounded up. The paragraph that used to be
+                here spent three more sentences justifying that rule with a scenario. The rule is
+                the useful part; the scenario was the page arguing with itself. */}
             <p className="mw-section__note">
-              The features you tick have to match one of them exactly; nothing is rounded up to the
-              nearest fit. Being handed a transfer-freezing switch you never asked for is the kind
-              of surprise a holder discovers at the worst possible moment, so the order is refused
-              instead.
+              What you tick has to match one of them exactly. A near fit is refused, never rounded
+              up.
             </p>
 
             <div className="mw-scroll">
               <table className="mw-dies">
-                <caption className="mw-dies__caption">
-                  Read across a row to compare, down a column to choose. Every answer comes from the
-                  features the service reported for that contract.
+                {/* Not on screen. A caption telling a sighted reader to "read across a row to
+                    compare" explains a table to someone already looking at it — the instruction is
+                    the table's own shape. It stays for the screen reader, where the shape is not
+                    visible and the summary is the fastest way to know what is about to be read. */}
+                <caption className="cf-sr">
+                  Three contracts compared across what each one allows.
                 </caption>
                 <thead>
                   <tr>
@@ -228,27 +237,30 @@ export function CataloguePage() {
             <h2 className="mw-section__title" id="where">
               Where it goes
             </h2>
+            {/*
+              THREE DEFINITIONS, EACH ONE LINE. The paragraph that used to sit under "Chains" listed
+              the Ethereum conformance suites Ember passes — state transitions, the VM, transaction
+              encoding, the trie, RLP, Shanghai. All true, all verifiable, and none of it a thing a
+              person naming a token needs while naming a token. It belongs on the network page,
+              where somebody is asking that question. "After you press deploy" went the same way:
+              the order page shows the progress it was describing, one line at a time, live.
+            */}
             <dl className="mw-pairs">
               <div className="mw-pair">
                 <dt>Chains</dt>
+                <dd>{CHAINS.map(chainName).join(' · ')}</dd>
+              </div>
+              <div className="mw-pair">
+                <dt>Opens on</dt>
                 <dd>
-                  {CHAINS.map(chainName).join(', ')}. Ember is the Forge Network&rsquo;s own chain,
-                  held to the vectors the Ethereum project publishes — state transitions, the
-                  virtual machine, transaction encoding, the trie and RLP, all passing at Shanghai.
+                  <code className="cf-num">{data.network}</code>, and you can change it on the form
                 </dd>
               </div>
               <div className="mw-pair">
-                <dt>Default network</dt>
+                <dt>Settled in</dt>
                 <dd>
-                  Orders open on <code className="cf-num">{data.network}</code> here. You choose on
-                  the form.
-                </dd>
-              </div>
-              <div className="mw-pair">
-                <dt>After you press deploy</dt>
-                <dd>
-                  The request comes straight back with an address to watch. Signing, broadcast and
-                  confirmation are recorded there one line at a time, so you can close the tab.
+                  <code className="cf-num">{data.settlementAsset}</code> from your CloudsForge
+                  wallet
                 </dd>
               </div>
             </dl>

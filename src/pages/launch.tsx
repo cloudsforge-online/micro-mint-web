@@ -253,7 +253,7 @@ export function LaunchPage() {
 
             <Field
               label="Decimals"
-              hint={`How far a balance is subdivided for display, 0 to ${MAX_DECIMALS}. Eighteen is the Ethereum habit. Display only — it does not multiply the figure below.`}
+              hint={`Display only, 0 to ${MAX_DECIMALS}. Eighteen is the Ethereum habit.`}
               size="short"
               problem={showProblems ? problemFor('decimals')?.message : undefined}
             >
@@ -267,7 +267,7 @@ export function LaunchPage() {
 
             <Field
               label="Initial supply, in the smallest unit"
-              hint="A whole number, passed to the constructor untouched. This many base units are created and sent to the owner address."
+              hint="A whole number, passed to the constructor untouched."
               problem={showProblems ? problemFor('supply')?.message : undefined}
               /*
                 Always rendered, never only on suspicion. The number typed here goes to the
@@ -352,7 +352,7 @@ export function LaunchPage() {
             {variant !== null && capRuleFor(variant) === 'required' && (
               <Field
                 label="Maximum supply, in the smallest unit"
-                hint="The hard limit the contract arithmetic will not cross. It has to be the initial supply or more."
+                hint="The hard limit the arithmetic will not cross. Initial supply or more."
                 problem={showProblems ? problemFor('cap')?.message : undefined}
               >
                 <input
@@ -370,7 +370,7 @@ export function LaunchPage() {
 
             <Field
               label="Owner address"
-              hint="Written into the constructor: it receives the whole initial supply and holds the owner role, if the contract you picked has one. Nobody at CloudsForge can change it afterwards, so one wrong character produces a token you cannot reach."
+              hint="Receives the whole supply and holds the owner role. Unchangeable afterwards — one wrong character is a token you cannot reach."
               problem={showProblems ? problemFor('ownerAddress')?.message : undefined}
             >
               <input
