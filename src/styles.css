@@ -271,8 +271,10 @@ body {
 
 .mw-head__title {
   margin: 0;
+  font-family: var(--cf-font-display);
   font-size: var(--cf-text-2xl);
-  line-height: 1.15;
+  line-height: var(--cf-leading-tight);
+  letter-spacing: var(--cf-tracking-tight);
 }
 
 .mw-head__symbol {
@@ -355,76 +357,409 @@ body {
   border-left-color: var(--cf-danger);
 }
 
-/* ------------------------------ price ------------------------------ */
+/* ═══════════════════════════ the offer surface ═══════════════════════════ *
+ *
+ * `.mw-price`, `.mw-tiers` and `.mw-tier*` STOOD HERE AND ARE GONE.
+ *
+ * They dressed the catalogue's four sixty-word panels and its three prose cards — some seven
+ * hundred words of true sentences that all made one point, which is that the bytecode was compiled
+ * before anybody ordered and an order is therefore a constructor call. The page makes that point
+ * with the constructor now (`src/components/plate.tsx`), so the rules that laid out the prose have
+ * no markup left to style and are not kept "in case".
+ *
+ * Brass is spent in three places and nowhere else: the eyebrow, the plate's top edge and type
+ * labels, and the filled glyph in the comparison. Everything else is the ash ramp and one line
+ * weight. That is the whole restraint budget — see the note about state never being colour alone
+ * at the head of this file, which the comparison obeys by carrying a WORD in every cell.
+ * ═════════════════════════════════════════════════════════════════════════ */
 
-.mw-price {
+.mw-eyebrow {
   margin: 0;
+  color: var(--cf-accent-text);
+  font-family: var(--cf-font-mono);
+  font-size: var(--cf-text-2xs);
+  letter-spacing: var(--cf-tracking-wide);
+  text-transform: uppercase;
+}
+
+/* ------------------------------- hero ------------------------------ */
+
+/*
+ * The thesis on the left, the thing being offered on the right. The right column is the plate and
+ * ONLY the plate: it is content-height, so it can never become the full-height right rail that
+ * buried the control this estate already had to redesign once.
+ */
+.mw-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--cf-space-3xl);
+  align-items: start;
+  margin: 0 0 var(--cf-space-3xl);
+  padding: 0 0 var(--cf-space-3xl);
+  border-bottom: 1px solid var(--cf-line);
+}
+
+.mw-hero__title {
+  margin: var(--cf-space-lg) 0 0;
+  font-family: var(--cf-font-display);
+  font-size: var(--cf-text-4xl);
+  font-weight: 700;
+  line-height: var(--cf-leading-tight);
+  letter-spacing: var(--cf-tracking-tight);
+}
+
+.mw-hero__lede {
+  margin: var(--cf-space-xl) 0 0;
+  max-width: 44ch;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-lg);
+  line-height: var(--cf-leading);
+}
+
+.mw-hero__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cf-space-2xl);
+  flex-wrap: wrap;
+  margin: var(--cf-space-2xl) 0 0;
+}
+
+.mw-hero__caption {
+  margin: var(--cf-space-lg) 0 0;
+  max-width: 44ch;
+  color: var(--cf-fg-mute);
+  font-size: var(--cf-text-xs);
+}
+
+@media (max-width: 62rem) {
+  .mw-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--cf-space-2xl);
+  }
+}
+
+@media (max-width: 40rem) {
+  .mw-hero__title {
+    font-size: var(--cf-text-3xl);
+  }
+}
+
+/* ------------------------------- cost ------------------------------ */
+
+/* The figure over its unit, rather than beside it: at 24ch the two competed for one line and the
+   unit broke into three, orphaning "pay" on the last. A grid puts the break where the sentence
+   wants it. */
+.mw-cost {
+  display: grid;
+  gap: var(--cf-space-3xs);
+  margin: 0;
+  max-width: 30ch;
+}
+
+/* The family is `.cf-num`'s. Only the size is set here, so the figure cannot drift off the
+   estate's numeral treatment. */
+.mw-cost__value {
+  font-size: var(--cf-text-2xl);
+  line-height: 1;
+}
+
+.mw-cost__unit {
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-xs);
+  line-height: var(--cf-leading-snug);
+}
+
+/* ------------------------------ plate ------------------------------ */
+
+/*
+ * The signature element: the contract's real constructor, set as an inscription, filling in as the
+ * customer types. The brass edge is the one place on the page the accent is allowed to be a
+ * surface rather than a mark.
+ */
+.mw-plate {
+  border: 1px solid var(--cf-line-strong);
+  border-top: 3px solid var(--cf-accent);
+  border-radius: var(--cf-radius);
+  background: var(--cf-bg-sunken);
+  font-family: var(--cf-font-mono);
+  font-size: var(--cf-text-xs);
+  overflow: hidden;
+  /* The plate is rendered in a ~32rem hero column AND in an 18rem order-form rail, so it sizes
+     itself off its OWN width rather than the viewport's. A page-width media query would get one
+     of the two wrong on every screen. */
+  container-type: inline-size;
+}
+
+.mw-plate__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cf-space-lg);
+  margin: 0;
+  padding: var(--cf-space-md) var(--cf-space-lg);
+  border-bottom: 1px solid var(--cf-line);
+  background: var(--cf-surface);
+}
+
+.mw-plate__file {
+  font-weight: 600;
+}
+
+.mw-plate__stamp {
+  flex: none;
+  color: var(--cf-accent-text);
+  font-size: var(--cf-text-2xs);
+  letter-spacing: var(--cf-tracking-wide);
+  text-transform: uppercase;
+}
+
+.mw-plate__body {
+  padding: var(--cf-space-lg);
+}
+
+.mw-plate__brace {
+  margin: 0;
+  color: var(--cf-fg-mute);
+}
+
+.mw-plate__args {
+  margin: 0;
+  padding: 0 0 0 var(--cf-space-xl);
+}
+
+.mw-plate__arg {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) minmax(0, 1fr);
+  gap: var(--cf-space-sm);
+  align-items: baseline;
+  padding: var(--cf-space-xs) 0;
+  border-bottom: 1px dotted var(--cf-line);
+}
+
+.mw-plate__arg:last-child {
+  border-bottom: 0;
+}
+
+.mw-plate__param {
+  display: flex;
+  gap: var(--cf-space-2xs);
+  flex-wrap: wrap;
+}
+
+.mw-plate__type {
+  color: var(--cf-accent-text);
+}
+
+.mw-plate__name {
+  color: var(--cf-fg-dim);
+}
+
+.mw-plate__slot {
+  margin: 0;
+  color: var(--cf-fg);
+  overflow-wrap: anywhere;
+}
+
+/* An empty slot says what belongs in it, in words, and is unmistakably not a value. */
+.mw-plate__slot--empty {
+  color: var(--cf-fg-mute);
+  font-style: italic;
+}
+
+/*
+ * Narrow enough that `uint256 initialSupply_` and a 42-character address cannot share a line:
+ * the parameter goes above its value instead of both being crushed to two characters a row.
+ */
+@container (max-width: 24rem) {
+  .mw-plate__args {
+    padding-left: var(--cf-space-lg);
+  }
+
+  .mw-plate__arg {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--cf-space-3xs);
+  }
+}
+
+/* ----------------------------- sections ---------------------------- */
+
+.mw-section {
+  margin: 0 0 var(--cf-space-3xl);
+}
+
+.mw-section__title {
+  margin: 0 0 var(--cf-space-sm);
+  font-family: var(--cf-font-display);
+  font-size: var(--cf-text-xl);
+  letter-spacing: var(--cf-tracking-tight);
+}
+
+.mw-section__note {
+  margin: 0 0 var(--cf-space-xl);
+  max-width: 68ch;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+}
+
+/* The comparison is wide by nature; it scrolls rather than wrapping its cells to shreds. */
+.mw-scroll {
+  overflow-x: auto;
+}
+
+/* ------------------------------- dies ------------------------------ */
+
+.mw-dies {
+  width: 100%;
+  min-width: 46rem;
+  border-collapse: collapse;
+  font-size: var(--cf-text-sm);
+}
+
+.mw-dies__caption {
+  caption-side: bottom;
+  margin-top: var(--cf-space-lg);
+  color: var(--cf-fg-mute);
+  font-size: var(--cf-text-xs);
+  text-align: left;
+}
+
+.mw-dies th,
+.mw-dies td {
+  padding: var(--cf-space-md) var(--cf-space-lg);
+  border-bottom: 1px solid var(--cf-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.mw-dies thead th {
+  border-bottom: 2px solid var(--cf-line-strong);
+  vertical-align: bottom;
+  font-weight: 400;
+}
+
+.mw-dies__name {
+  display: block;
+  font-family: var(--cf-font-display);
+  font-size: var(--cf-text-lg);
+  font-weight: 600;
+  letter-spacing: var(--cf-tracking-tight);
+}
+
+.mw-dies__contract {
+  display: block;
+  margin-top: var(--cf-space-2xs);
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-xs);
+}
+
+.mw-dies__key {
+  display: block;
+  margin-top: var(--cf-space-3xs);
+  color: var(--cf-accent-text);
+  font-size: var(--cf-text-2xs);
+  letter-spacing: var(--cf-tracking-wide);
+  text-transform: uppercase;
+}
+
+.mw-dies__axis {
+  width: 13rem;
+  color: var(--cf-fg-dim);
+  font-weight: 400;
+}
+
+.mw-dies__cell {
   display: flex;
   align-items: baseline;
   gap: var(--cf-space-sm);
 }
 
-.mw-price__value {
-  font-size: var(--cf-text-2xl);
+/* Reinforcement only. The word beside it is the answer. */
+.mw-dies__glyph {
+  flex: none;
+  color: var(--cf-fg-mute);
+  font-size: var(--cf-text-2xs);
+}
+
+.mw-dies__glyph--yes {
   color: var(--cf-accent);
 }
 
-.mw-price__unit {
+.mw-dies__line {
   color: var(--cf-fg-dim);
+  font-size: var(--cf-text-xs);
 }
 
-/* ------------------------------ tiers ------------------------------ */
+.mw-dies tbody tr:last-child th,
+.mw-dies tbody tr:last-child td {
+  border-bottom: 0;
+}
 
-.mw-tiers {
+/* ------------------------------ proofs ----------------------------- */
+
+.mw-proofs {
   list-style: none;
-  margin: var(--cf-space-lg) 0 0;
+  margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--cf-space-lg);
-  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: var(--cf-space-xl) var(--cf-space-2xl);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
 }
 
-.mw-tier {
-  padding: var(--cf-space-lg);
-  border: 1px solid var(--cf-line);
-  border-radius: var(--cf-radius-sm);
+.mw-proof {
+  padding-top: var(--cf-space-lg);
+  border-top: 2px solid var(--cf-line-strong);
 }
 
-.mw-tier__title {
+.mw-proof__claim {
   margin: 0;
   font-size: var(--cf-text-md);
+  font-weight: 600;
 }
 
-.mw-tier__contract {
-  margin: var(--cf-space-2xs) 0 0;
-  color: var(--cf-fg-dim);
-  font-size: var(--cf-text-sm);
-}
-
-.mw-tier__blurb {
+.mw-proof__line {
   margin: var(--cf-space-sm) 0 0;
-  font-size: var(--cf-text-sm);
-}
-
-.mw-tier__facts {
-  margin: var(--cf-space-lg) 0 0;
-  font-size: var(--cf-text-sm);
-}
-
-.mw-tier__facts div {
-  display: flex;
-  gap: var(--cf-space-sm);
-  margin: 0 0 var(--cf-space-2xs);
-}
-
-.mw-tier__facts dt {
-  flex: none;
-  min-width: 9rem;
   color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
 }
 
-.mw-tier__facts dd {
+/* ------------------------------ pairs ------------------------------ */
+
+.mw-pairs {
   margin: 0;
+  display: grid;
+  gap: var(--cf-space-lg);
+}
+
+.mw-pair {
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+  gap: var(--cf-space-lg);
+  align-items: baseline;
+  padding-bottom: var(--cf-space-lg);
+  border-bottom: 1px solid var(--cf-line);
+}
+
+.mw-pair:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.mw-pair dt {
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+}
+
+.mw-pair dd {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--cf-text-sm);
+}
+
+@media (max-width: 40rem) {
+  .mw-pair {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--cf-space-2xs);
+  }
 }
 
 .mw-cta {
@@ -610,6 +945,23 @@ body {
   font-size: var(--cf-text-sm);
 }
 
+/*
+ * An input's width is a claim about what goes in it.
+ *
+ * Every control on this form used to be the full width of the column, so the box in front of
+ * `Decimals` — which takes a number from 0 to 18 — was the same size as the one in front of an
+ * owner address. A `max-width` rather than a `width`, so the column still shrinks past it on a
+ * phone; and a hint rather than a limit, because `maxLength` and `problemsWith` are what actually
+ * hold. `.cf-input` is the design system's control, so the cap goes on the child, not the label.
+ */
+.mw-field--short .cf-input {
+  max-width: 8rem;
+}
+
+.mw-field--mid .cf-input {
+  max-width: 18rem;
+}
+
 
 .mw-area {
   resize: vertical;
@@ -652,17 +1004,56 @@ body {
   cursor: pointer;
 }
 
-.mw-choice input {
+.mw-choice:hover {
+  border-color: var(--cf-line-strong);
+}
+
+/*
+ * THE RADIO IS DRAWN HERE RATHER THAN BY THE BROWSER, AND THAT IS A BUG FIX.
+ *
+ * `index.html` declares `data-cf-scheme="auto"` and `color-scheme: dark light`, so the palette
+ * follows the reader while the native form chrome resolves separately. On a light reader the page
+ * painted cream and the unchecked radios still painted as SOLID DARK DISCS — which is exactly what
+ * a chosen radio looks like — so the two unchosen contracts read as chosen and the chosen one, a
+ * ring, read as empty. Three options, and the control said the wrong thing about all three.
+ *
+ * Drawn from the semantic tokens instead, it says the same thing on both schemes: a hairline ring
+ * when it is not chosen, and the accent with a bored-out centre when it is. The inset shadow is
+ * what bores the centre — it fills from the edge inward, leaving the accent showing through as the
+ * dot — so the dot is one element rather than a pseudo-element that has to be positioned.
+ */
+.mw-choice input[type='radio'] {
   grid-area: radio;
   align-self: center;
+  appearance: none;
+  margin: 0;
+  width: 1.05em;
+  height: 1.05em;
+  border: 1px solid var(--cf-line-strong);
+  border-radius: 50%;
+  background: var(--cf-bg-raised);
+  cursor: pointer;
+}
+
+.mw-choice input[type='radio']:checked {
+  border-color: var(--cf-accent);
+  background: var(--cf-accent);
+  box-shadow: inset 0 0 0 0.22em var(--cf-bg-raised);
+}
+
+.mw-choice input[type='radio']:focus-visible {
+  outline: 2px solid var(--cf-accent);
+  outline-offset: 2px;
 }
 
 .mw-choice__title {
   grid-area: title;
+  font-size: var(--cf-text-md);
 }
 
 .mw-choice__note {
   grid-area: note;
+  margin: var(--cf-space-3xs) 0 0;
   color: var(--cf-fg-dim);
   font-size: var(--cf-text-xs);
 }
@@ -671,6 +1062,7 @@ body {
 .mw-choice.is-selected {
   border-color: var(--cf-accent);
   border-left-width: 3px;
+  background: var(--cf-bg-raised);
 }
 
 .mw-actions {
@@ -689,6 +1081,54 @@ body {
 
 .mw-inline-btn {
   font-size: var(--cf-text-xs);
+}
+
+/* --------------------------- order layout -------------------------- */
+
+/*
+ * Form on the left, the constructor it is writing on the right.
+ *
+ * The aside is content-height and sticks BELOW the shared sub-nav — `--cf-bar-h` plus the strip's
+ * own height, which is its two `lg` paddings plus one `md` line, expressed as `3xl + xl` rather
+ * than as a copied pixel number. A rail that stretches to the bottom of the page is the defect
+ * this estate shipped on Foresight and had to redesign; this one cannot, because nothing stretches
+ * it. Under 62rem the columns collapse and the sticky is dropped: a sticky block on a short
+ * viewport is a block that covers the thing behind it.
+ */
+.mw-launch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  gap: var(--cf-space-3xl);
+  align-items: start;
+}
+
+/* Wins over `.mw-form`'s measure — same specificity, later in the file. The column is the measure
+   here, and two of them fighting is how a form ends up 46rem wide inside a 30rem track. */
+.mw-launch__form {
+  max-width: none;
+}
+
+.mw-launch__aside {
+  position: sticky;
+  top: calc(var(--cf-bar-h) + var(--cf-space-3xl) + var(--cf-space-xl));
+  align-self: start;
+}
+
+.mw-aside__note {
+  margin: var(--cf-space-lg) 0 0;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-xs);
+}
+
+@media (max-width: 62rem) {
+  .mw-launch {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--cf-space-2xl);
+  }
+
+  .mw-launch__aside {
+    position: static;
+  }
 }
 
 /* ------------------------------ tables ----------------------------- */
