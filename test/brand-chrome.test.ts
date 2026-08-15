@@ -27,6 +27,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const at = (p: string) => fileURLToPath(new URL(`../${p}`, import.meta.url))
@@ -107,10 +108,36 @@ test('index.html does NOT tell crawlers to stay away', () => {
 test('public/ holds no stray brand asset that nothing links', () => {
   // A file nobody links is dead weight that looks like it is working, and this is how an old
   // product's mark survives a rebrand in one repository.
-  const linked = new Set([...HTML.matchAll(/(?:href|content)="\/([^"]+\.png)"/g)].map((m) => m[1]))
-  const stray = readdirSync(at('public')).filter((f) => f.endsWith('.png') && !linked.has(f))
-  assert.deepEqual(stray, [], `public/ holds ${stray.join(', ')}, which index.html does not link`)
+  //
+  // `index.html` is not the only place a link can be. The Create mark is drawn by the catalogue
+  // page as the page's crest, which is a real reference — reading only the HTML would have called
+  // a live asset dead and pushed the fix towards deleting it. So the source tree is searched too,
+  // and the invariant is unchanged: SOMETHING has to point at every file in here.
+  const referenced = new Set([
+    ...[...HTML.matchAll(/(?:href|content)="\/([^"]+\.png)"/g)].map((m) => m[1] ?? ''),
+    ...sources().flatMap((text) => [...text.matchAll(/["'`]\/([^"'`]+\.png)["'`]/g)].map((m) => m[1] ?? '')),
+  ])
+  const stray = readdirSync(at('public')).filter((f) => f.endsWith('.png') && !referenced.has(f))
+  assert.deepEqual(
+    stray,
+    [],
+    `public/ holds ${stray.join(', ')}, which neither index.html nor src/ points at`,
+  )
 })
+
+/** Every source file under `src/`, read once, for the reference scan above. */
+function sources(): string[] {
+  const out: string[] = []
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name)
+      if (entry.isDirectory()) walk(full)
+      else if (/\.(tsx?|css|html)$/.test(entry.name)) out.push(readFileSync(full, 'utf8'))
+    }
+  }
+  walk(at('src'))
+  return out
+}
 
 test('the accent and substrate are declared on <html>, before React can paint', () => {
   // Set by React, the page paints the default ember and then changes colour. `create` has its own

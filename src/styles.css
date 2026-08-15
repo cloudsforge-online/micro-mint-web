@@ -375,11 +375,22 @@ body {
 
 .mw-eyebrow {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--cf-space-xs);
   color: var(--cf-accent-text);
   font-family: var(--cf-font-mono);
   font-size: var(--cf-text-2xs);
   letter-spacing: var(--cf-tracking-wide);
   text-transform: uppercase;
+}
+/* The mark sits on its own dark chip because it was drawn on black — on the warm page ground the
+   anvil's lower edge loses itself. `--cf-ash-900` is the substrate the drawing was made against,
+   so the chip is the artwork's own ground rather than a colour invented to sit behind it. */
+.mw-eyebrow__mark {
+  display: block;
+  border-radius: var(--cf-radius-sm);
+  background: var(--cf-ash-900);
 }
 
 /* ------------------------------- hero ------------------------------ */
