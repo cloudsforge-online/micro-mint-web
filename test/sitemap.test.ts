@@ -43,7 +43,6 @@ import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import { ENV_LABELS } from '@cloudsforge/ui'
-import { robotsTxt } from '@cloudsforge/ui/sitemap'
 import { ROUTES } from '../src/lib/routes.ts'
 import { BASE, publicPath } from '../src/lib/routes.ts'
 
@@ -116,7 +115,10 @@ describe('the sitemap nginx serves', () => {
     // Stated separately from the equality above so the failure message says WHICH route went
     // missing rather than printing two documents and leaving the reader to diff them.
     assert.deepEqual([...PUBLIC_PATHS], [''], 'the set of listable public routes has changed')
-    assert.match(servedBody(`${BASE}/sitemap.xml`), /<loc>\$scheme:\/\/\$host<\/loc>/)
+    assert.match(
+      servedBody(`${BASE}/sitemap.xml`),
+      new RegExp(`<loc>https://\\$host${BASE}</loc>`),
+    )
   })
 
   it('invites a crawler to no gated route', () => {
@@ -166,11 +168,21 @@ describe('an environment that is not mainnet', () => {
   })
 
   it('refuses every crawler and serves no sitemap', () => {
-    // Both halves matter and neither is sufficient: robots.txt stops the fetch, and a 404 on the
-    // sitemap stops the invitation. A testnet project page indexed beside a real one is a support
+    // ── THE robots.txt HALF IS micro-site's NOW, AND ONLY THE SITEMAP HALF IS STILL OURS ───────
+    //
+    // Both halves still matter and neither is sufficient: robots.txt stops the fetch, the 404
+    // stops the document being there to fetch, and a page that is only disallowed can still be
+    // indexed from an inbound link. A testnet project page indexed beside a real one is a support
     // problem before it is an SEO problem.
-    assert.match(nginx, /if \(\$cf_env\) \{ return 200 'User-agent: \*\\nDisallow: \/\\n'; \}/)
-    assert.match(nginx, new RegExp(`location = /create/sitemap\\.xml \\{[\\s\\S]*?if \\(\\$cf_env\\) \\{ return 404; \\}`))
+    //
+    // But a crawler reads robots.txt at the ORIGIN ROOT, so since this surface became
+    // `<apex>/create` its copy would be a file nothing fetches on any host — and this image no
+    // longer serves one. micro-site owns that half and its own suite asserts it; what is still
+    // this image's to serve, and therefore still asserted here, is the sitemap's 404.
+    assert.match(
+      nginx,
+      new RegExp(`location = ${BASE}/sitemap\\.xml \\{[\\s\\S]*?if \\(\\$cf_env\\) \\{ return 404; \\}`),
+    )
   })
 
   it('matches a suffixed subdomain as well as a bare environment apex', () => {

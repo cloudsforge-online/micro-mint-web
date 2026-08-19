@@ -23,7 +23,6 @@ import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import { DEEP_LINK_PATH, NAV, NON_INDEX_PATHS, ROUTES } from '../src/lib/routes.ts'
 import { readServiceSource } from './service-source.ts'
-import { BASE } from '../src/lib/routes.ts'
 
 const read = (file: string): string => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
 
@@ -229,6 +228,11 @@ describe('nginx serves exactly the routes that exist', () => {
 
   it('serves the index', () => {
     assert.match(directives, new RegExp(`location = /create\\s*\\{`))
+    // AND THE TRAILING SLASH, which is a SECOND address this surface did not used to have: `/`
+    // has no slash-suffixed variant to get wrong, `/create` does. A reader who types the folder
+    // with a slash — or any tool that normalises a directory-looking URL by adding one — arrives
+    // there, and without this block it falls through to `location /` and 404s.
+    assert.match(directives, new RegExp(`location = /create/\\s*\\{`))
   })
 
   it('does NOT use the SPA 200-fallback', () => {

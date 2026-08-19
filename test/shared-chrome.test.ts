@@ -172,12 +172,22 @@ test('the head follows the address rather than staying on the shell’s title', 
     const content = (selector: string): string =>
       s.document.head.querySelector(selector)?.getAttribute('content') ?? ''
 
-    // Composed against the serving origin, never a hostname typed into the bundle.
+    // ── COMPOSED AGAINST THE SERVING ORIGIN, AND THE INDEX HAS NO TRAILING SLASH ──────────────
+    //
+    // These read `${ORIGIN}/` while this surface was a hostname, where `/` IS the index and the
+    // only spelling of it. The index is `<apex>/create` now, and `normalisePath` in
+    // `@cloudsforge/ui/seo` deliberately collapses the trailing slash: one page must not acquire
+    // two addresses and split its own indexing between them.
+    //
+    // So the canonical and `og:url` are the bare mount — which is also what the sitemap lists and
+    // what `location = /create` serves. `location = /create/` exists and answers, but it is a
+    // second door rather than a second address, and nothing advertises it.
     assert.equal(
       s.document.head.querySelector('link[rel="canonical"]')?.getAttribute('href'),
-      `${ORIGIN}/`,
+      ORIGIN,
     )
-    assert.equal(content('meta[property="og:url"]'), `${ORIGIN}/`)
+    assert.equal(content('meta[property="og:url"]'), ORIGIN)
+    // The card is a static asset in this bundle's own directory, so it keeps the slash.
     assert.equal(content('meta[property="og:image"]'), `${ORIGIN}/og-1200x630.png`)
 
     // Public, and invited: the catalogue is the address a stranger arrives at, and nginx.conf
