@@ -25,7 +25,7 @@
  * None of this is visible in production: the bundle and mint share `create.<apex>` there, so
  * `apiBase()` is `''` and every request is relative.
  */
-import { cloudsforgeHosts, type CloudsForgeHosts, type SurfaceKey } from '@cloudsforge/ui'
+import { apiBaseFor, cloudsforgeHosts, type CloudsForgeHosts, type SurfaceKey } from '@cloudsforge/ui'
 import { viewedHosts } from './viewed.ts'
 
 /**
@@ -52,15 +52,27 @@ export const APP_NAME = 'mint-web'
  * build-time constant and this repository has none: an image built for production and opened on
  * localhost would then point at a host that is not there.
  */
-export function resolveApiBase(pageOrigin: string, hosts: CloudsForgeHosts, key: SurfaceKey): string {
-  const own = hosts[key]
-  // With no page origin there is nothing for a relative URL to resolve against, so the absolute
-  // form is the only correct answer.
-  if (!pageOrigin) return own
-  // A surface may carry a basePath (the wallet is a path inside Hub), so compare ORIGINS rather
-  // than whole URLs — otherwise every such surface would look cross-origin to itself.
-  return new URL(own).origin === pageOrigin ? '' : own
-}
+/**
+ * ── IT IS `@cloudsforge/ui`'s NOW, AND THIS REPOSITORY HELD ONE OF SIXTEEN COPIES ───────────────
+ *
+ * The body used to live here, and in fifteen other frontends, eleven of them byte-identical. It
+ * is a derivation from the registry, and the estate has been bitten three times by a second copy
+ * of a registry derivation.
+ *
+ * The behaviour is unchanged in the case this surface was in and changes in exactly one way for
+ * the case it has moved to. Same origin used to answer `''`, so requests stayed RELATIVE —
+ * correct while `micro-mint` and this bundle shared a hostname, and wrong now the bundle is
+ * `<apex>/create`: a relative `/v1/…` then resolves at the APEX ROOT, which is micro-site's, and
+ * micro-site answers its SPA shell. 200, an HTML body where JSON was expected, every panel on the
+ * page in a failure state with a perfectly healthy network tab.
+ *
+ * `apiBaseFor` answers the surface's own MOUNT instead, and the gateway's stripPrefix takes it
+ * back off before `micro-mint` sees it — so the SERVICE is unchanged (decision 4).
+ *
+ * Re-exported rather than deleted because the tests and `lib/api.ts` both name it, and a rename
+ * across those for no behavioural reason is churn a reviewer has to read past.
+ */
+export const resolveApiBase = apiBaseFor
 
 /** The same four names `cloudsforgeHosts()` treats as development. Kept in step by test. */
 export function isLocal(hostname: string): boolean {

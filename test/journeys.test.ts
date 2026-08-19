@@ -39,7 +39,7 @@ import { ProjectPage } from '../src/pages/project.tsx'
 import { TokenPage } from '../src/pages/token.tsx'
 import { TokensPage } from '../src/pages/tokens.tsx'
 
-const ORIGIN = 'https://create.cloudsforge.online'
+const ORIGIN = 'https://cloudsforge.online/create'
 const at = (p: string) => fileURLToPath(new URL(`../${p}`, import.meta.url))
 
 const page = (element: ReactElement, path: string): ReactElement =>
@@ -841,7 +841,7 @@ describe('BJ-CREATE-404 — an unowned address answers 404', () => {
     .join('\n')
 
   it('BJ-CREATE-404 T2: nginx serves the shell through error_page 404, never try_files', () => {
-    assert.match(directives, /error_page\s+404\s+\/index\.html/)
+    assert.match(directives, /error_page\s+404\s+\/create\/index\.html/)
     assert.doesNotMatch(directives, /try_files\s+\$uri\s+(\$uri\/\s+)?\/index\.html/)
   })
 

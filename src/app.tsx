@@ -30,12 +30,13 @@ import { NotFoundPage } from './pages/not-found.tsx'
 import { ProjectPage } from './pages/project.tsx'
 import { TokenPage } from './pages/token.tsx'
 import { TokensPage } from './pages/tokens.tsx'
+import { BASE } from './lib/routes.ts'
 
 export function App() {
   const unregistered = !placementIsKnown()
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={BASE}>
       <ScrollToTop />
       <AuthProvider>
         <Routes>

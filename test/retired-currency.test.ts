@@ -85,7 +85,7 @@ import { ProjectPage } from '../src/pages/project.tsx'
 import { TokenPage } from '../src/pages/token.tsx'
 import { TokensPage } from '../src/pages/tokens.tsx'
 
-const ORIGIN = 'https://create.cloudsforge.online'
+const ORIGIN = 'https://cloudsforge.online/create'
 
 const here = (p: string) => fileURLToPath(new URL(`../${p}`, import.meta.url))
 

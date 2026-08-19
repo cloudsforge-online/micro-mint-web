@@ -45,7 +45,7 @@ import * as fx from './fixtures.ts'
 import { withScreen, type Screen } from './dom.ts'
 
 /** The address this surface is served from, so `cloudsforgeHosts()` resolves the real apex. */
-const ORIGIN = 'https://create.cloudsforge.online'
+const ORIGIN = 'https://cloudsforge.online/create'
 
 /**
  * `allowEmpty` because the subject is a strip of chrome, not a page: the bar's own text is well
