@@ -49,7 +49,7 @@ const directives = nginx
 
 /** The alternation inside nginx's enumerated `location ~ ^/(…)` block. */
 function nginxPaths(): string[] {
-  const match = /location\s+~\s+\^\/\(([^)]+)\)/.exec(directives)
+  const match = new RegExp(`location\\s+~\\s+\\^/create/\\(([^)]+)\\)`).exec(directives)
   assert.ok(match, 'nginx.conf has no enumerated route block')
   return (match[1] ?? '').split('|').map((p) => p.trim())
 }
@@ -227,7 +227,12 @@ describe('nginx serves exactly the routes that exist', () => {
   })
 
   it('serves the index', () => {
-    assert.match(directives, /location = \/\s*\{/)
+    assert.match(directives, new RegExp(`location = /create\\s*\\{`))
+    // AND THE TRAILING SLASH, which is a SECOND address this surface did not used to have: `/`
+    // has no slash-suffixed variant to get wrong, `/create` does. A reader who types the folder
+    // with a slash — or any tool that normalises a directory-looking URL by adding one — arrives
+    // there, and without this block it falls through to `location /` and 404s.
+    assert.match(directives, new RegExp(`location = /create/\\s*\\{`))
   })
 
   it('does NOT use the SPA 200-fallback', () => {
@@ -236,12 +241,12 @@ describe('nginx serves exactly the routes that exist', () => {
   })
 
   it('keeps the honest 404 through error_page', () => {
-    assert.match(directives, /error_page 404 \/index\.html/)
+    assert.match(directives, new RegExp(`error_page 404 /create/index\\.html`))
   })
 
   it('404s a missing asset rather than serving the shell for it', () => {
     // A JavaScript request answered with HTML fails with a syntax error naming the wrong file.
-    assert.match(directives, /location \/assets\/\s*\{\s*try_files \$uri =404/)
+    assert.match(directives, new RegExp(`location /create/assets/\\s*\\{\\s*try_files \\$uri =404`))
   })
 
   it('sets the three security headers at the server level', () => {
@@ -278,12 +283,12 @@ describe('nginx serves exactly the routes that exist', () => {
   })
 
   it('never caches the shell', () => {
-    const root = /location = \/\s*\{([^}]*)\}/.exec(directives)?.[1] ?? ''
+    const root = new RegExp(`location = /create\\s*\\{([^}]*)\\}`).exec(directives)?.[1] ?? ''
     assert.match(root, /Cache-Control "no-store"/)
   })
 
   it('caches hashed assets immutably', () => {
-    const assets = /location \/assets\/\s*\{([^}]*)\}/.exec(directives)?.[1] ?? ''
+    const assets = new RegExp(`location /create/assets/\\s*\\{([^}]*)\\}`).exec(directives)?.[1] ?? ''
     assert.match(assets, /immutable/)
   })
 })

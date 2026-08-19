@@ -37,7 +37,7 @@ const read = (file: string): string =>
 
 /** The production host table, as `cloudsforgeHosts()` derives it from an apex hostname. */
 function production(): CloudsForgeHosts {
-  installWindow('https://create.cloudsforge.online/')
+  installWindow('https://cloudsforge.online/create/')
   const hosts = cloudsforgeHosts()
   removeWindow()
   return hosts
@@ -53,7 +53,14 @@ describe('the surface this app is', () => {
     assert.ok(surface, 'create is not in the surface registry')
     assert.equal(surface.kind, 'product')
     assert.equal(surface.inSwitcher, true)
-    assert.equal(surface.subdomain, 'create')
+    // ── IT IS A PATH SINCE WAVE 3b, AND THE SWITCHER STILL FINDS IT ─────────────────────
+    //
+    // `subdomain: 'create'` was the assertion, and what it was FOR is that the switcher can
+    // navigate here. A home is an ADDRESS, and either half of (subdomain, basePath)
+    // supplies one — so both are asserted rather than the empty string alone, which would
+    // pass for a surface that had lost its home entirely.
+    assert.equal(surface.subdomain, '')
+    assert.equal(surface.basePath, '/create')
     assert.equal(surface.name, 'Forge Create')
   })
 
@@ -69,7 +76,11 @@ describe('the API base is an origin comparison, never a flag', () => {
 
   it('is relative when the page and the API share an origin', () => {
     // Production: nginx serves this bundle and mint serves /v1 behind create.<apex>.
-    assert.equal(resolveApiBase('https://create.cloudsforge.online', hosts, PRODUCT), '')
+    // THE MOUNT, not `''`. A relative `/v1/…` from a page at `/create/anything`
+    // resolves at the ORIGIN ROOT — micro-site's — which answers its SPA shell: 200, HTML
+    // where JSON was expected. The gateway strips `/create` before `micro-mint` sees
+    // it, so the service is unchanged (decision 4).
+    assert.equal(resolveApiBase('https://cloudsforge.online', hosts, PRODUCT), '/create')
   })
 
   it('is absolute when they do not', () => {
@@ -85,8 +96,8 @@ describe('the API base is an origin comparison, never a flag', () => {
   })
 
   it('resolves from the window on every call, so one image serves every environment', () => {
-    installWindow('https://create.cloudsforge.online/tokens')
-    assert.equal(apiBase(), '')
+    installWindow('https://cloudsforge.online/create/tokens')
+    assert.equal(apiBase(), '/create')
     removeWindow()
 
     installWindow('http://localhost:5184/tokens')
@@ -129,7 +140,7 @@ describe('local development is exempt, in exactly the four names cloudsforgeHost
   })
 
   it('treats a real hostname as not local', () => {
-    for (const hostname of ['create.cloudsforge.online', 'example.test', 'localhost.evil.test']) {
+    for (const hostname of ['cloudsforge.online', 'example.test', 'localhost.evil.test']) {
       assert.equal(isLocal(hostname), false, hostname)
     }
   })
@@ -139,7 +150,14 @@ describe('the placement warning', () => {
   const hosts = production()
 
   it('accepts this surface’s own origin', () => {
-    assert.equal(isRegisteredPlacement('https://create.cloudsforge.online', 'create.cloudsforge.online', hosts), true)
+    assert.equal(isRegisteredPlacement(
+      // An ORIGIN, which has no path — the mount lives in `hosts`, not here. The sweep that
+      // repointed page URLs to `<apex>/create` reached this one too, and an origin carrying
+      // a path is not an origin.
+      'https://cloudsforge.online',
+      'cloudsforge.online',
+      hosts,
+    ), true)
   })
 
   it('accepts localhost, where there is no apex to get wrong', () => {

@@ -74,7 +74,7 @@ import { AuthProvider } from '../src/lib/auth.tsx'
 import { LaunchPage } from '../src/pages/launch.tsx'
 import { TokenPage } from '../src/pages/token.tsx'
 
-const ORIGIN = 'https://create.cloudsforge.online'
+const ORIGIN = 'https://cloudsforge.online/create'
 
 const page = (element: ReactElement, path: string): ReactElement =>
   h(MemoryRouter, { initialEntries: [path] }, h(AuthProvider, null, element) as ReactElement)
