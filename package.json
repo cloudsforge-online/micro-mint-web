@@ -1,6 +1,6 @@
 {
   "name": "@cloudsforge/mint-web",
-  "version": "2026.8.95",
+  "version": "2026.8.96",
   "packageManager": "pnpm@11.9.0",
   "private": true,
   "description": "Forge Create: the token launch flow. Catalogue, order, pay, deploy, and the project page a buyer reads.",
