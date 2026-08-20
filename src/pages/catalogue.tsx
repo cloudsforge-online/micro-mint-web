@@ -31,6 +31,7 @@ import { useResource } from '../lib/resource.ts'
 import { getCatalogue, CHAINS, type Catalogue } from '../lib/mint.ts'
 import { CAPABILITIES, TIER_COPY } from '../lib/inscription.ts'
 import { chainName, usd } from '../lib/format.ts'
+import { publicPath } from '../lib/routes.ts'
 
 /**
  * Four claims, each with the ONE fact that makes it checkable.
@@ -67,7 +68,14 @@ export function CataloguePage() {
               single strike a person adds. Decorative, so it is out of the accessibility tree and
               the words beside it carry the meaning. */}
           <p className="mw-eyebrow">
-            <img className="mw-eyebrow__mark" src="/mark-256.png" alt="" aria-hidden="true" width="22" height="22" />
+            <img
+              className="mw-eyebrow__mark"
+              src={publicPath('/mark-256.png')}
+              alt=""
+              aria-hidden="true"
+              width="22"
+              height="22"
+            />
             Forge Create
           </p>
           <h1 className="mw-hero__title">
